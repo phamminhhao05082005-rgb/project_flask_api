@@ -5,3 +5,5 @@ cách lấy project về máy
 - tạo database project
 - chỉnh phần cấu hình mysql phù hợp với máy
 - chạy lệnh pip install -r requirements.txt
+- chạy models
+- chạy index
