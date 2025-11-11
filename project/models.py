@@ -69,7 +69,8 @@ class QuyDinh(BaseModel):
 class HangMuc(BaseModel):
     ten_hang_muc = Column(String(100), nullable=False)
     mo_ta = Column(String(255), nullable=True)
-    linh_kiens = relationship('LinhKien', backref='hangmuc', lazy=True)
+    linh_kiens = relationship('LinhKien', backref='hangmuc',
+                              lazy=True, cascade='all, delete-orphan')
 
 
 class LinhKien(BaseModel):
@@ -135,25 +136,28 @@ if __name__ == '__main__':
         db.session.add_all([qd1, qd2])
         db.session.commit()
 
-        hm1 = HangMuc(ten_hang_muc="Bugi", don_gia=200000)
-        hm2 = HangMuc(ten_hang_muc="Nhớt", don_gia=150000)
-        hm3 = HangMuc(ten_hang_muc="Lọc gió", don_gia=120000)
-        hm4 = HangMuc(ten_hang_muc="Ắc quy", don_gia=800000)
-        hm5 = HangMuc(ten_hang_muc="Phanh", don_gia=300000)
+        hm1 = HangMuc(ten_hang_muc="Bugi", mo_ta="bugi")
+        hm2 = HangMuc(ten_hang_muc="Nhớt", mo_ta="dầu nhớt")
+        hm3 = HangMuc(ten_hang_muc="Lọc gió", mo_ta="lọc gió xe máy")
+        hm4 = HangMuc(ten_hang_muc="Ắc quy", mo_ta="ắc quy xe")
+        hm5 = HangMuc(ten_hang_muc="Phanh", mo_ta="bộ phanh")
         db.session.add_all([hm1, hm2, hm3, hm4, hm5])
         db.session.commit()
 
-        lk1 = LinhKien(ten_linh_kien="Bugi Denso", gia=200000, quanly_id=ql.id, hangmuc_id=hm1.id)
-        lk2 = LinhKien(ten_linh_kien="Nhớt Castrol", gia=120000, quanly_id=ql.id, hangmuc_id=hm2.id)
-        lk3 = LinhKien(ten_linh_kien="Nhớt Motul 7100", gia=180000, quanly_id=ql.id, hangmuc_id=hm2.id)
-        lk4 = LinhKien(ten_linh_kien="Lọc gió K&N", gia=150000, quanly_id=ql.id, hangmuc_id=hm3.id)
-        lk5 = LinhKien(ten_linh_kien="Ắc quy GS 12V", gia=850000, quanly_id=ql.id, hangmuc_id=hm4.id)
-        lk6 = LinhKien(ten_linh_kien="Ắc quy Đồng Nai 12V", gia=780000, quanly_id=ql.id, hangmuc_id=hm4.id)
-        lk7 = LinhKien(ten_linh_kien="Má phanh trước Yamaha", gia=320000, quanly_id=ql.id, hangmuc_id=hm5.id)
-        lk8 = LinhKien(ten_linh_kien="Má phanh sau Honda", gia=280000, quanly_id=ql.id, hangmuc_id=hm5.id)
-        lk9 = LinhKien(ten_linh_kien="Dây curoa", gia=50000, quanly_id=ql.id, hangmuc_id=hm1.id)
-        lk10 = LinhKien(ten_linh_kien="Bugi Iridium", gia=250000, quanly_id=ql.id, hangmuc_id=hm1.id)
-        lk11 = LinhKien(ten_linh_kien="Nhớt Motul 5100", gia=160000, quanly_id=ql.id, hangmuc_id=hm2.id)
+        lk1 = LinhKien(ten_linh_kien="Bugi Denso", gia=200000, tien_cong=50000, quanly_id=ql.id, hangmuc_id=hm1.id)
+        lk2 = LinhKien(ten_linh_kien="Nhớt Castrol", gia=120000, tien_cong=20000, quanly_id=ql.id, hangmuc_id=hm2.id)
+        lk3 = LinhKien(ten_linh_kien="Nhớt Motul 7100", gia=180000, tien_cong=25000, quanly_id=ql.id, hangmuc_id=hm2.id)
+        lk4 = LinhKien(ten_linh_kien="Lọc gió K&N", gia=150000, tien_cong=30000, quanly_id=ql.id, hangmuc_id=hm3.id)
+        lk5 = LinhKien(ten_linh_kien="Ắc quy GS 12V", gia=850000, tien_cong=70000, quanly_id=ql.id, hangmuc_id=hm4.id)
+        lk6 = LinhKien(ten_linh_kien="Ắc quy Đồng Nai 12V", gia=780000, tien_cong=65000, quanly_id=ql.id,
+                       hangmuc_id=hm4.id)
+        lk7 = LinhKien(ten_linh_kien="Má phanh trước Yamaha", gia=320000, tien_cong=40000, quanly_id=ql.id,
+                       hangmuc_id=hm5.id)
+        lk8 = LinhKien(ten_linh_kien="Má phanh sau Honda", gia=280000, tien_cong=35000, quanly_id=ql.id,
+                       hangmuc_id=hm5.id)
+        lk9 = LinhKien(ten_linh_kien="Dây curoa", gia=50000, tien_cong=10000, quanly_id=ql.id, hangmuc_id=hm1.id)
+        lk10 = LinhKien(ten_linh_kien="Bugi Iridium", gia=250000, tien_cong=45000, quanly_id=ql.id, hangmuc_id=hm1.id)
 
-        db.session.add_all([lk1, lk2, lk3, lk4, lk5, lk6, lk7, lk8, lk9, lk10, lk11])
+        db.session.add_all([lk1, lk2, lk3, lk4, lk5, lk6, lk7, lk8, lk9, lk10])
         db.session.commit()
+

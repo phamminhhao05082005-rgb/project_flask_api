@@ -1,0 +1,44 @@
+{% extends 'quanly/base_quanly.html' %}
+
+{% block quanly_content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert"
+           style="position: fixed; top: 70px; left: 20px; z-index: 1050; min-width: 250px;">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<div class="d-flex justify-content-between mb-3">
+    <h2>Danh sách danh mục</h2>
+    <a href="{{ url_for('quanly_hangmuc_create') }}" class="btn btn-success">Tạo danh mục mới</a>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Tên danh mục</th>
+            <th>Hành động</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for hm in hangmucs %}
+        <tr>
+            <td>{{ hm.id }}</td>
+            <td>{{ hm.ten_hang_muc }}</td>
+            <td>
+                <a href="{{ url_for('quanly_hangmuc_edit', id=hm.id) }}" class="btn btn-primary btn-sm">Chỉnh sửa</a>
+                <form action="{{ url_for('quanly_hangmuc_delete', id=hm.id) }}" method="post" style="display:inline-block" onsubmit="return confirm('Bạn có chắc muốn xóa?');">
+                    <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

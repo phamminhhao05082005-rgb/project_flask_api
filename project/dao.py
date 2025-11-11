@@ -31,22 +31,28 @@ def get_linhkien_by_id(id):
     return LinhKien.query.get(id)
 
 
-def create_linhkien(ten, gia, hangmuc_id, quanly_id):
-    lk = LinhKien(ten_linh_kien=ten, gia=gia, hangmuc_id=hangmuc_id, quanly_id=quanly_id)
+def create_linhkien(ten, gia, tien_cong, hangmuc_id, quanly_id):
+    lk = LinhKien(
+        ten_linh_kien=ten,
+        gia=gia,
+        tien_cong=tien_cong,  # thêm
+        hangmuc_id=hangmuc_id,
+        quanly_id=quanly_id
+    )
     db.session.add(lk)
     db.session.commit()
-    return lk
 
 
-def update_linhkien(id, ten, gia, hangmuc_id):
+
+def update_linhkien(id, ten, gia, tien_cong, hangmuc_id):
     lk = get_linhkien_by_id(id)
-    if not lk:
-        return None
-    lk.ten_linh_kien = ten
-    lk.gia = gia
-    lk.hangmuc_id = hangmuc_id
-    db.session.commit()
-    return lk
+    if lk:
+        lk.ten_linh_kien = ten
+        lk.gia = gia
+        lk.tien_cong = tien_cong  # thêm
+        lk.hangmuc_id = hangmuc_id
+        db.session.commit()
+
 
 def delete_linhkien(id):
     lk = get_linhkien_by_id(id)
@@ -93,3 +99,31 @@ def delete_quydinh(id):
     db.session.delete(qd)
     db.session.commit()
     return True
+
+def get_all_hangmuc():
+    return HangMuc.query.all()
+
+def get_hangmuc_by_id(id):
+    return HangMuc.query.get(id)
+
+def create_hangmuc(ten):
+    hm = HangMuc(ten_hang_muc=ten)
+    db.session.add(hm)
+    db.session.commit()
+
+def update_hangmuc(id, ten):
+    hm = get_hangmuc_by_id(id)
+    if hm:
+        hm.ten_hang_muc = ten
+        db.session.commit()
+
+def delete_hangmuc(id):
+    hm = get_hangmuc_by_id(id)
+    if hm:
+        if hm.linh_kiens:
+            return False, "Danh mục này vẫn còn linh kiện, không thể xóa!"
+        db.session.delete(hm)
+        db.session.commit()
+        return True, "Xóa hạng mục thành công!"
+
+

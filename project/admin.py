@@ -4,7 +4,6 @@ from flask_admin import Admin
 from flask import redirect, url_for
 from flask_login import logout_user, current_user
 from init import app, db
-from project.models import LinhKien
 
 admin = Admin(app=app, name='project')
 

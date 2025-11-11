@@ -2,7 +2,7 @@ from flask import render_template, request, redirect, url_for, flash, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from init import app, login
 from project import dao
-from project.models import RoleEnum  # 💡 import enum RoleEnum từ model của bạn
+from models import RoleEnum
 import math
 
 
@@ -115,6 +115,7 @@ def quanly_linhkien_create():
         dao.create_linhkien(
             ten=request.form['ten'],
             gia=float(request.form['gia']),
+            tien_cong=float(request.form['tien_cong']),  # thêm
             hangmuc_id=int(request.form['hangmuc']),
             quanly_id=current_user.id
         )
@@ -122,6 +123,7 @@ def quanly_linhkien_create():
         return redirect(url_for('quanly_linhkien'))
 
     return render_template('quanly/tao_or_xoa_lk.html', hangmucs=hangmucs, linhkien=None)
+
 
 
 @app.route('/quanly/linhkien/edit/<int:id>', methods=['GET', 'POST'])
@@ -138,12 +140,14 @@ def quanly_linhkien_edit(id):
             id=id,
             ten=request.form['ten'],
             gia=float(request.form['gia']),
+            tien_cong=float(request.form['tien_cong']),
             hangmuc_id=int(request.form['hangmuc'])
         )
         flash("Cập nhật linh kiện thành công", "success")
         return redirect(url_for('quanly_linhkien'))
 
     return render_template('quanly/tao_or_xoa_lk.html', hangmucs=hangmucs, linhkien=lk)
+
 
 
 @app.route('/quanly/linhkien/delete/<int:id>', methods=['POST'])
@@ -228,6 +232,60 @@ def quanly_baocao():
     if check:
         return check
     return render_template('quanly/baocao.html')
+
+@app.route('/quanly/hangmuc')
+@login_required
+def quanly_hangmuc():
+    check = check_role(RoleEnum.QUANLY)
+    if check:
+        return check
+
+    hangmucs = dao.get_all_hangmuc()
+    return render_template('quanly/hangmuc.html', hangmucs=hangmucs)
+
+
+@app.route('/quanly/hangmuc/create', methods=['GET', 'POST'])
+@login_required
+def quanly_hangmuc_create():
+    check = check_role(RoleEnum.QUANLY)
+    if check:
+        return check
+
+    if request.method == 'POST':
+        dao.create_hangmuc(request.form['ten'])
+        flash("Tạo danh mục thành công", "success")
+        return redirect(url_for('quanly_hangmuc'))
+
+    return render_template('quanly/tao_or_sua_hm.html', hangmuc=None)
+
+
+@app.route('/quanly/hangmuc/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def quanly_hangmuc_edit(id):
+    check = check_role(RoleEnum.QUANLY)
+    if check:
+        return check
+
+    hm = dao.get_hangmuc_by_id(id)
+    if request.method == 'POST':
+        dao.update_hangmuc(id, request.form['ten'])
+        flash("Cập nhật danh mục thành công", "success")
+        return redirect(url_for('quanly_hangmuc'))
+
+    return render_template('quanly/tao_or_sua_hm.html', hangmuc=hm)
+
+
+@app.route('/quanly/hangmuc/delete/<int:id>', methods=['POST'])
+@login_required
+def quanly_hangmuc_delete(id):
+    check = check_role(RoleEnum.QUANLY)
+    if check:
+        return check
+
+    success, message = dao.delete_hangmuc(id)
+    flash(message, "success" if success else "danger")
+    return redirect(url_for('quanly_hangmuc'))
+
 
 
 def check_role(*allowed_roles):

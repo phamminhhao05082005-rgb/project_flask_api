@@ -1,0 +1,14 @@
+{% extends 'quanly/base_quanly.html' %}
+
+{% block quanly_content %}
+<h2>{{ 'Chỉnh sửa danh mục' if hangmuc else 'Tạo danh mục mới' }}</h2>
+
+<form method="post">
+    <div class="mb-3">
+        <label class="form-label">Tên danh mục</label>
+        <input type="text" class="form-control" name="ten" required value="{{ hangmuc.ten_hang_muc if hangmuc else '' }}">
+    </div>
+    <button type="submit" class="btn btn-success">Lưu</button>
+    <a href="{{ url_for('quanly_hangmuc') }}" class="btn btn-secondary">Hủy</a>
+</form>
+{% endblock %}
