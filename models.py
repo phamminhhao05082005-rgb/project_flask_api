@@ -39,7 +39,6 @@ class NhanVienSuaChua(NhanVienBase):
         'polymorphic_identity': 'sua_chua',
     }
 
-
 class ThuNgan(NhanVienBase):
     __tablename__ = 'thu_ngan'
     id = Column(Integer, ForeignKey('nhan_vien_base.id'), primary_key=True)
