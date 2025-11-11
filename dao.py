@@ -14,12 +14,17 @@ def get_user_by_id(id):
 
 # cac ham thao tac voi linh kien
 
-def get_linhkien_paginate(page=1, per_page=5, hangmuc_id=None):
+def get_linhkien_paginate(page=1, per_page=5, hangmuc_id=None, keyword=None):
     query = LinhKien.query
+
     if hangmuc_id:
         query = query.filter(LinhKien.hangmuc_id == hangmuc_id)
-    return query.paginate(page=page, per_page=per_page)
 
+    if keyword:
+        query = query.filter(LinhKien.ten_linh_kien.contains(keyword))
+
+
+    return query.order_by(LinhKien.id.asc()).paginate(page=page, per_page=per_page)
 
 
 def get_linhkien_by_id(id):

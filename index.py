@@ -2,17 +2,21 @@ from flask import render_template, request, redirect, url_for, flash, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from init import app, login
 from project import dao
+from project.models import RoleEnum  # 💡 import enum RoleEnum từ model của bạn
 import math
+
 
 @app.route('/login')
 def index():
     return render_template('login.html')
 
+
 @login.user_loader
 def load_user(pk):
     return dao.get_user_by_id(pk)
 
-@app.route('/login', methods=['post'])
+
+@app.route('/login', methods=['POST'])
 def login_process():
     username = request.form.get('username')
     password = request.form.get('password')
@@ -21,13 +25,13 @@ def login_process():
     if u:
         login_user(u)
 
-        if u.role == 'tiepnhan':
+        if u.role == RoleEnum.TIEPNHAN:
             return redirect(url_for('tiepnhan_dashboard'))
-        elif u.role == 'suachua':
+        elif u.role == RoleEnum.SUACHUA:
             return redirect(url_for('suachua_dashboard'))
-        elif u.role == 'thungan':
+        elif u.role == RoleEnum.THUNGAN:
             return redirect(url_for('thungan_dashboard'))
-        elif u.role == 'quanly':
+        elif u.role == RoleEnum.QUANLY:
             return redirect(url_for('quanly_dashboard'))
         else:
             return render_template('login.html')
@@ -35,11 +39,10 @@ def login_process():
         return render_template('login.html', error="Tên đăng nhập hoặc mật khẩu không đúng")
 
 
-
 @app.route('/tiepnhan')
 @login_required
 def tiepnhan_dashboard():
-    check = check_role('tiepnhan')
+    check = check_role(RoleEnum.TIEPNHAN)
     if check:
         return check
     return render_template('NVTiepNhan/tiepnhan.html')
@@ -48,7 +51,7 @@ def tiepnhan_dashboard():
 @app.route('/suachua')
 @login_required
 def suachua_dashboard():
-    check = check_role('suachua')
+    check = check_role(RoleEnum.SUACHUA)
     if check:
         return check
     return render_template('NVSuaChua/suachua.html')
@@ -57,7 +60,7 @@ def suachua_dashboard():
 @app.route('/thungan')
 @login_required
 def thungan_dashboard():
-    check = check_role('thungan')
+    check = check_role(RoleEnum.THUNGAN)
     if check:
         return check
     return render_template('NVThuNgan/thungan.html')
@@ -66,7 +69,7 @@ def thungan_dashboard():
 @app.route('/quanly')
 @login_required
 def quanly_dashboard():
-    check = check_role('quanly')
+    check = check_role(RoleEnum.QUANLY)
     if check:
         return check
     return render_template('quanly/base_quanly.html')
@@ -78,31 +81,32 @@ def logout():
     logout_user()
     return render_template('login.html')
 
-# cac view quan ly linh kien
-
 @app.route('/quanly/linhkien')
 @login_required
 def quanly_linhkien():
-    check = check_role('quanly')
+    check = check_role(RoleEnum.QUANLY)
     if check:
         return check
 
     page = request.args.get('page', 1, type=int)
     hangmuc_id = request.args.get('hangmuc', type=int)
+    keyword = request.args.get('q', '')
 
-    linhkiens = dao.get_linhkien_paginate(page=page, per_page=5, hangmuc_id=hangmuc_id)
+    linhkiens = dao.get_linhkien_paginate(page=page, per_page=5, hangmuc_id=hangmuc_id, keyword=keyword)
     hangmucs = dao.get_all_hangmuc()
 
-    return render_template('quanly/linhkien.html',
-                           linhkiens=linhkiens,
-                           hangmucs=hangmucs,
-                           selected_hangmuc=hangmuc_id)
+    return render_template(
+        'quanly/linhkien.html',
+        linhkiens=linhkiens,
+        hangmucs=hangmucs,
+        selected_hangmuc=hangmuc_id
+    )
 
 
 @app.route('/quanly/linhkien/create', methods=['GET', 'POST'])
 @login_required
 def quanly_linhkien_create():
-    check = check_role('quanly')
+    check = check_role(RoleEnum.QUANLY)
     if check:
         return check
 
@@ -123,7 +127,7 @@ def quanly_linhkien_create():
 @app.route('/quanly/linhkien/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def quanly_linhkien_edit(id):
-    check = check_role('quanly')
+    check = check_role(RoleEnum.QUANLY)
     if check:
         return check
 
@@ -145,7 +149,7 @@ def quanly_linhkien_edit(id):
 @app.route('/quanly/linhkien/delete/<int:id>', methods=['POST'])
 @login_required
 def quanly_linhkien_delete(id):
-    check = check_role('quanly')
+    check = check_role(RoleEnum.QUANLY)
     if check:
         return check
 
@@ -153,12 +157,11 @@ def quanly_linhkien_delete(id):
     flash("Xóa linh kiện thành công", "success")
     return redirect(url_for('quanly_linhkien'))
 
-# cac view quan ly quy dinh
 
 @app.route('/quanly/quydinh')
 @login_required
 def quanly_quydinh():
-    check = check_role('quanly')
+    check = check_role(RoleEnum.QUANLY)
     if check:
         return check
 
@@ -166,10 +169,11 @@ def quanly_quydinh():
     quydinhs = dao.get_quydinh_paginate(page=page, per_page=5)
     return render_template('quanly/quydinh.html', quydinhs=quydinhs)
 
+
 @app.route('/quanly/quydinh/create', methods=['GET', 'POST'])
 @login_required
 def quanly_quydinh_create():
-    check = check_role('quanly')
+    check = check_role(RoleEnum.QUANLY)
     if check:
         return check
 
@@ -188,7 +192,7 @@ def quanly_quydinh_create():
 @app.route('/quanly/quydinh/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def quanly_quydinh_edit(id):
-    check = check_role('quanly')
+    check = check_role(RoleEnum.QUANLY)
     if check:
         return check
 
@@ -208,7 +212,7 @@ def quanly_quydinh_edit(id):
 @app.route('/quanly/quydinh/delete/<int:id>', methods=['POST'])
 @login_required
 def quanly_quydinh_delete(id):
-    check = check_role('quanly')
+    check = check_role(RoleEnum.QUANLY)
     if check:
         return check
 
@@ -220,20 +224,17 @@ def quanly_quydinh_delete(id):
 @app.route('/quanly/baocao')
 @login_required
 def quanly_baocao():
-    check = check_role('quanly')
+    check = check_role(RoleEnum.QUANLY)
     if check:
         return check
     return render_template('quanly/baocao.html')
 
 
-
 def check_role(*allowed_roles):
-
+    """Kiểm tra quyền dựa theo Enum RoleEnum"""
     if current_user.role not in allowed_roles:
         abort(403)
-
     return None
-
 
 
 if __name__ == '__main__':
