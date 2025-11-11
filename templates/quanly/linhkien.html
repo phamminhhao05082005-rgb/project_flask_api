@@ -1,0 +1,79 @@
+{% extends 'quanly/base_quanly.html' %}
+
+{% block quanly_content %}
+<div class="d-flex justify-content-between mb-3">
+    <h2>Danh sách linh kiện</h2>
+    <a href="{{ url_for('quanly_linhkien_create') }}" class="btn btn-success">Tạo linh kiện mới</a>
+</div>
+
+<!-- Form lọc hạng mục -->
+<form method="get" class="mb-3 d-flex align-items-center">
+    <label class="me-2">Lọc theo hạng mục:</label>
+    <select class="form-select me-2" name="hangmuc" style="width:200px;">
+        <option value="">-- Tất cả --</option>
+        {% for hm in hangmucs %}
+        <option value="{{ hm.id }}" {% if selected_hangmuc == hm.id %}selected{% endif %}>{{ hm.ten_hang_muc }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary">Lọc</button>
+</form>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Tên linh kiện</th>
+            <th>Giá</th>
+            <th>Hạng mục</th>
+            <th>Hành động</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for lk in linhkiens.items %}
+        <tr>
+            <td>{{ lk.id }}</td>
+            <td>{{ lk.ten_linh_kien }}</td>
+            <td>{{ "{:,.0f}".format(lk.gia) }} VNĐ</td>
+            <td>{{ lk.hangmuc.ten_hang_muc if lk.hangmuc else '-' }}</td>
+            <td>
+                <a href="{{ url_for('quanly_linhkien_edit', id=lk.id) }}" class="btn btn-primary btn-sm">Chỉnh sửa</a>
+                <form action="{{ url_for('quanly_linhkien_delete', id=lk.id) }}" method="post" style="display:inline-block" onsubmit="return confirm('Bạn có chắc muốn xóa?');">
+                    <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Phân trang -->
+<nav aria-label="Page navigation">
+    <ul class="pagination">
+        {% if linhkiens.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('quanly_linhkien', page=linhkiens.prev_num, hangmuc=selected_hangmuc) }}">« Trước</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">« Trước</span></li>
+        {% endif %}
+
+        {% for page_num in linhkiens.iter_pages() %}
+            {% if page_num %}
+            <li class="page-item {% if page_num == linhkiens.page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('quanly_linhkien', page=page_num, hangmuc=selected_hangmuc) }}">{{ page_num }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+        {% endfor %}
+
+        {% if linhkiens.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('quanly_linhkien', page=linhkiens.next_num, hangmuc=selected_hangmuc) }}">Tiếp »</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Tiếp »</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endblock %}

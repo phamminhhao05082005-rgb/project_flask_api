@@ -1,0 +1,27 @@
+{% extends 'quanly/base_quanly.html' %}
+
+{% block quanly_content %}
+<h2>{{ 'Chỉnh sửa' if linhkien else 'Tạo linh kiện mới' }}</h2>
+
+<form method="post">
+    <div class="mb-3">
+        <label class="form-label">Tên linh kiện</label>
+        <input type="text" class="form-control" name="ten" required value="{{ linhkien.ten_linh_kien if linhkien else '' }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Giá</label>
+        <input type="number" class="form-control" name="gia" required value="{{ linhkien.gia if linhkien else '' }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Hạng mục</label>
+        <select class="form-select" name="hangmuc" required>
+            <option value="">-- Chọn hạng mục --</option>
+            {% for hm in hangmucs %}
+            <option value="{{ hm.id }}" {% if linhkien and linhkien.hangmuc_id == hm.id %}selected{% endif %}>{{ hm.ten_hang_muc }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn btn-success">Lưu</button>
+    <a href="{{ url_for('quanly_linhkien') }}" class="btn btn-secondary">Hủy</a>
+</form>
+{% endblock %}

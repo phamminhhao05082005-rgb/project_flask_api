@@ -1,0 +1,64 @@
+{% extends 'quanly/base_quanly.html' %}
+
+{% block quanly_content %}
+<div class="d-flex justify-content-between mb-3">
+    <h2>Danh sách Quy Định</h2>
+    <a href="{{ url_for('quanly_quydinh_create') }}" class="btn btn-success">Tạo quy định mới</a>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Tên quy định</th>
+            <th>Nội dung</th>
+            <th>Hành động</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for qd in quydinhs.items %}
+        <tr>
+            <td>{{ qd.id }}</td>
+            <td>{{ qd.ten_quy_dinh }}</td>
+            <td>{{ qd.noi_dung }}</td>
+            <td>
+                <a href="{{ url_for('quanly_quydinh_edit', id=qd.id) }}" class="btn btn-primary btn-sm">Chỉnh sửa</a>
+                <form action="{{ url_for('quanly_quydinh_delete', id=qd.id) }}" method="post" style="display:inline-block" onsubmit="return confirm('Bạn có chắc muốn xóa?');">
+                    <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<nav aria-label="Page navigation">
+    <ul class="pagination">
+        {% if quydinhs.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('quanly_quydinh', page=quydinhs.prev_num) }}">« Trước</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">« Trước</span></li>
+        {% endif %}
+
+        {% for page_num in quydinhs.iter_pages() %}
+            {% if page_num %}
+            <li class="page-item {% if page_num == quydinhs.page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('quanly_quydinh', page=page_num) }}">{{ page_num }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+        {% endfor %}
+
+        {% if quydinhs.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('quanly_quydinh', page=quydinhs.next_num) }}">Tiếp »</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Tiếp »</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endblock %}
