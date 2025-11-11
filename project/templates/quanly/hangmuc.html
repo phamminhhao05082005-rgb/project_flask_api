@@ -1,22 +1,22 @@
 {% extends 'quanly/base_quanly.html' %}
 
 {% block quanly_content %}
+<div class="d-flex justify-content-between mb-3">
+    <h2>Danh sách danh mục</h2>
+    <a href="{{ url_for('quanly_hangmuc_create') }}" class="btn btn-success">Tạo danh mục mới</a>
+</div>
+
+<!-- Flash messages -->
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     {% for category, message in messages %}
-      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert"
-           style="position: fixed; top: 70px; left: 20px; z-index: 1050; min-width: 250px;">
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
         {{ message }}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
     {% endfor %}
   {% endif %}
 {% endwith %}
-
-<div class="d-flex justify-content-between mb-3">
-    <h2>Danh sách danh mục</h2>
-    <a href="{{ url_for('quanly_hangmuc_create') }}" class="btn btn-success">Tạo danh mục mới</a>
-</div>
 
 <table class="table table-striped">
     <thead>
@@ -27,7 +27,7 @@
         </tr>
     </thead>
     <tbody>
-        {% for hm in hangmucs %}
+        {% for hm in hangmucs.items %}
         <tr>
             <td>{{ hm.id }}</td>
             <td>{{ hm.ten_hang_muc }}</td>
@@ -41,4 +41,36 @@
         {% endfor %}
     </tbody>
 </table>
+
+<!-- Phân trang -->
+<nav aria-label="Page navigation">
+    <ul class="pagination">
+        {% if hangmucs.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('quanly_hangmuc', page=hangmucs.prev_num) }}">« Trước</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">« Trước</span></li>
+        {% endif %}
+
+        {% for page_num in hangmucs.iter_pages() %}
+            {% if page_num %}
+            <li class="page-item {% if page_num == hangmucs.page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('quanly_hangmuc', page=page_num) }}">{{ page_num }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+        {% endfor %}
+
+        {% if hangmucs.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('quanly_hangmuc', page=hangmucs.next_num) }}">Tiếp »</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Tiếp »</span></li>
+        {% endif %}
+    </ul>
+</nav>
+
 {% endblock %}

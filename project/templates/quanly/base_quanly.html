@@ -12,6 +12,20 @@
 
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+<!--                <li class="nav-item">-->
+<!--                    <a class="nav-link {% if 'linhkien_admin' in request.endpoint %}active{% endif %}"-->
+<!--                       href="{{ url_for('linhkien_admin.index_view') }}">Quản lý linh kiện</a>-->
+<!--                </li>-->
+
+<!--                <li class="nav-item">-->
+<!--                    <a class="nav-link {% if 'hangmuc_admin' in request.endpoint %}active{% endif %}"-->
+<!--                       href="{{ url_for('hangmuc_admin.index_view') }}">Quản lý danh mục</a>-->
+<!--                </li>-->
+
+<!--                <li class="nav-item">-->
+<!--                    <a class="nav-link {% if 'quydinh_admin' in request.endpoint %}active{% endif %}"-->
+<!--                       href="{{ url_for('quydinh_admin.index_view') }}">Quản lý quy định</a>-->
+<!--                </li>-->
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint=='quanly_linhkien' %}active{% endif %}"
                        href="{{ url_for('quanly_linhkien') }}">Quản lý linh kiện</a>
@@ -30,6 +44,7 @@
                        href="{{ url_for('quanly_baocao') }}">Báo cáo thống kê</a>
                 </li>
             </ul>
+
             <span class="navbar-text me-3 text-dark fw-semibold">
                 Xin chào, {{ current_user.name }}
             </span>
@@ -44,6 +59,11 @@
         <h2>Chào mừng {{ current_user.name }} đến với trang quản lý</h2>
         <p>Vui lòng chọn thao tác quản lý từ menu phía trên để bắt đầu.</p>
     </div>
+    {% endblock %}
+</div>
+<div class="container mt-4">
+    {% block body %}
+        {{ super() }}
     {% endblock %}
 </div>
 

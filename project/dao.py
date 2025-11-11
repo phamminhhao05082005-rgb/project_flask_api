@@ -125,5 +125,6 @@ def delete_hangmuc(id):
         db.session.delete(hm)
         db.session.commit()
         return True, "Xóa hạng mục thành công!"
-
+def get_hangmuc_paginate(page=1, per_page=5):
+    return HangMuc.query.order_by(HangMuc.id.asc()).paginate(page=page, per_page=per_page)
 

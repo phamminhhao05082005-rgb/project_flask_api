@@ -240,8 +240,11 @@ def quanly_hangmuc():
     if check:
         return check
 
-    hangmucs = dao.get_all_hangmuc()
+    page = request.args.get('page', 1, type=int)
+    hangmucs = dao.get_hangmuc_paginate(page=page, per_page=5)
+
     return render_template('quanly/hangmuc.html', hangmucs=hangmucs)
+
 
 
 @app.route('/quanly/hangmuc/create', methods=['GET', 'POST'])
@@ -296,4 +299,9 @@ def check_role(*allowed_roles):
 
 
 if __name__ == '__main__':
+    from project import admin
+    from init import app  # hoặc từ file bạn tạo app Flask
+
+    for rule in app.url_map.iter_rules():
+        print(rule.endpoint, rule)
     app.run(debug=True)
