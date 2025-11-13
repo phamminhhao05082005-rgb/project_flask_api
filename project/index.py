@@ -292,7 +292,6 @@ def quanly_hangmuc_delete(id):
 
 
 def check_role(*allowed_roles):
-    """Kiểm tra quyền dựa theo Enum RoleEnum"""
     if current_user.role not in allowed_roles:
         abort(403)
     return None
@@ -300,8 +299,6 @@ def check_role(*allowed_roles):
 
 if __name__ == '__main__':
     from project import admin
-    from init import app  # hoặc từ file bạn tạo app Flask
+    from init import app
 
-    for rule in app.url_map.iter_rules():
-        print(rule.endpoint, rule)
     app.run(debug=True)

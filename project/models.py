@@ -35,30 +35,22 @@ class NhanVienTiepNhan(NhanVienBase):
     __tablename__ = 'nhan_vien_tiep_nhan'
     id = Column(Integer, ForeignKey('nhan_vien_base.id'), primary_key=True)
     ca_lam = Column(String(50))
-    __mapper_args__ = {'polymorphic_identity': RoleEnum.TIEPNHAN.value}
-
 
 class NhanVienSuaChua(NhanVienBase):
     __tablename__ = 'nhan_vien_sua_chua'
     id = Column(Integer, ForeignKey('nhan_vien_base.id'), primary_key=True)
     ca_lam = Column(String(50))
-    __mapper_args__ = {'polymorphic_identity': RoleEnum.SUACHUA.value}
-
 
 class ThuNgan(NhanVienBase):
     __tablename__ = 'thu_ngan'
     id = Column(Integer, ForeignKey('nhan_vien_base.id'), primary_key=True)
     ca_lam = Column(String(50))
-    __mapper_args__ = {'polymorphic_identity': RoleEnum.THUNGAN.value}
-
 
 class QuanLy(NhanVienBase):
     __tablename__ = 'quan_ly'
     id = Column(Integer, ForeignKey('nhan_vien_base.id'), primary_key=True)
     quy_dinhs = relationship('QuyDinh', backref='quanly', lazy=True)
     linh_kiens = relationship('LinhKien', backref='quanly', lazy=True)
-    __mapper_args__ = {'polymorphic_identity': RoleEnum.QUANLY.value}
-
 
 class QuyDinh(BaseModel):
     ten_quy_dinh = Column(String(50), nullable=False)
