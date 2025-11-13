@@ -10,10 +10,10 @@ admin = Admin(app, name='Quản lý', url='/admin')
 
 
 class AdminModelView(ModelView):
-    list_template = 'quanly/base_quanly.html'
-    create_template = 'quanly/base_quanly.html'
-    edit_template = 'quanly/base_quanly.html'
-    details_template = 'quanly/base_quanly.html'
+    # list_template = 'quanly/base_quanly.html'
+    # create_template = 'quanly/base_quanly.html'
+    # edit_template = 'quanly/base_quanly.html'
+    # details_template = 'quanly/base_quanly.html'
     def is_accessible(self):
         return current_user.is_authenticated and current_user.role == RoleEnum.QUANLY
 

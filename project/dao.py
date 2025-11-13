@@ -35,7 +35,7 @@ def create_linhkien(ten, gia, tien_cong, hangmuc_id, quanly_id):
     lk = LinhKien(
         ten_linh_kien=ten,
         gia=gia,
-        tien_cong=tien_cong,  # thêm
+        tien_cong=tien_cong,
         hangmuc_id=hangmuc_id,
         quanly_id=quanly_id
     )
@@ -49,7 +49,7 @@ def update_linhkien(id, ten, gia, tien_cong, hangmuc_id):
     if lk:
         lk.ten_linh_kien = ten
         lk.gia = gia
-        lk.tien_cong = tien_cong  # thêm
+        lk.tien_cong = tien_cong
         lk.hangmuc_id = hangmuc_id
         db.session.commit()
 
@@ -99,6 +99,8 @@ def delete_quydinh(id):
     db.session.delete(qd)
     db.session.commit()
     return True
+
+#  cac thao tac voi hang muc
 
 def get_all_hangmuc():
     return HangMuc.query.all()
