@@ -50,7 +50,6 @@ class LinhKien(db.Model):
     quanly_id = Column(Integer, ForeignKey(NhanVienBase.id), nullable=False)
     hangmuc_id = Column(Integer, ForeignKey(HangMuc.id))
 
-
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()

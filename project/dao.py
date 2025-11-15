@@ -24,13 +24,10 @@ def get_linhkien_paginate(page=1, per_page=5, hangmuc_id=None, keyword=None):
     if keyword:
         query = query.filter(LinhKien.ten_linh_kien.contains(keyword))
 
-
     return query.order_by(LinhKien.id.asc()).paginate(page=page, per_page=per_page)
-
 
 def get_linhkien_by_id(id):
     return LinhKien.query.get(id)
-
 
 def create_linhkien(ten, gia, tien_cong, hangmuc_id, quanly_id):
     lk = LinhKien(
@@ -42,8 +39,6 @@ def create_linhkien(ten, gia, tien_cong, hangmuc_id, quanly_id):
     )
     db.session.add(lk)
     db.session.commit()
-
-
 
 def update_linhkien(id, ten, gia, tien_cong, hangmuc_id):
     lk = get_linhkien_by_id(id)
@@ -62,7 +57,6 @@ def delete_linhkien(id):
     db.session.delete(lk)
     db.session.commit()
     return True
-
 
 def get_all_hangmuc():
     return HangMuc.query.all()

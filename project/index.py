@@ -9,7 +9,6 @@ import math
 def index():
     return render_template('login.html')
 
-
 @login.user_loader
 def load_user(pk):
     return dao.get_user_by_id(pk)
@@ -40,8 +39,6 @@ def login_process():
 
     return redirect(url_for(redirect_map.get(u.role, 'login')))
 
-
-
 @app.route('/tiepnhan')
 @login_required
 def tiepnhan_dashboard():
@@ -49,7 +46,6 @@ def tiepnhan_dashboard():
     if check:
         return check
     return render_template('NVTiepNhan/tiepnhan.html')
-
 
 @app.route('/suachua')
 @login_required
@@ -59,7 +55,6 @@ def suachua_dashboard():
         return check
     return render_template('NVSuaChua/suachua.html')
 
-
 @app.route('/thungan')
 @login_required
 def thungan_dashboard():
@@ -68,7 +63,6 @@ def thungan_dashboard():
         return check
     return render_template('NVThuNgan/thungan.html')
 
-
 @app.route('/quanly')
 @login_required
 def quanly_dashboard():
@@ -76,7 +70,6 @@ def quanly_dashboard():
     if check:
         return check
     return render_template('quanly/base_quanly.html')
-
 
 @app.route('/logout')
 @login_required
@@ -144,8 +137,6 @@ def quanly_linhkien_create():
 
     return render_template('quanly/tao_or_xoa_lk.html', hangmucs=hangmucs, linhkien=None)
 
-
-
 @app.route('/quanly/linhkien/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def quanly_linhkien_edit(id):
@@ -186,8 +177,6 @@ def quanly_linhkien_edit(id):
 
     return render_template('quanly/tao_or_xoa_lk.html', hangmucs=hangmucs, linhkien=lk)
 
-
-
 @app.route('/quanly/linhkien/delete/<int:id>', methods=['POST'])
 @login_required
 def quanly_linhkien_delete(id):
@@ -199,7 +188,6 @@ def quanly_linhkien_delete(id):
     flash("Xóa linh kiện thành công", "success")
     return redirect(url_for('quanly_linhkien'))
 
-
 @app.route('/quanly/quydinh')
 @login_required
 def quanly_quydinh():
@@ -210,7 +198,6 @@ def quanly_quydinh():
     page = request.args.get('page', 1, type=int)
     quydinhs = dao.get_quydinh_paginate(page=page, per_page=5)
     return render_template('quanly/quydinh.html', quydinhs=quydinhs)
-
 
 @app.route('/quanly/quydinh/create', methods=['GET', 'POST'])
 @login_required
@@ -250,7 +237,6 @@ def quanly_quydinh_edit(id):
 
     return render_template('quanly/tao_or_xoa_qd.html', quydinh=qd)
 
-
 @app.route('/quanly/quydinh/delete/<int:id>', methods=['POST'])
 @login_required
 def quanly_quydinh_delete(id):
@@ -261,7 +247,6 @@ def quanly_quydinh_delete(id):
     dao.delete_quydinh(id)
     flash("Xóa quy định thành công", "success")
     return redirect(url_for('quanly_quydinh'))
-
 
 @app.route('/quanly/baocao')
 @login_required
@@ -282,7 +267,6 @@ def quanly_hangmuc():
     hangmucs = dao.get_hangmuc_paginate(page=page, per_page=5)
 
     return render_template('quanly/hangmuc.html', hangmucs=hangmucs)
-
 
 
 @app.route('/quanly/hangmuc/create', methods=['GET', 'POST'])
@@ -306,8 +290,6 @@ def quanly_hangmuc_create():
 
     return render_template('quanly/tao_or_sua_hm.html', hangmuc=None)
 
-
-
 @app.route('/quanly/hangmuc/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def quanly_hangmuc_edit(id):
@@ -328,7 +310,6 @@ def quanly_hangmuc_edit(id):
 
     return render_template('quanly/tao_or_sua_hm.html', hangmuc=hm)
 
-
 @app.route('/quanly/hangmuc/delete/<int:id>', methods=['POST'])
 @login_required
 def quanly_hangmuc_delete(id):
@@ -341,12 +322,10 @@ def quanly_hangmuc_delete(id):
     return redirect(url_for('quanly_hangmuc'))
 
 
-
 def check_role(*allowed_roles):
     if current_user.role not in allowed_roles:
         abort(403)
     return None
-
 
 if __name__ == '__main__':
     from project import admin
