@@ -2,7 +2,7 @@
 
 {% block quanly_content %}
 <h2>{{ quydinh and "Chỉnh sửa" or "Tạo" }} Quy Định</h2>
-
+{% include 'layout/flash_messages.html' %}
 <form method="post">
     <div class="mb-3">
         <label class="form-label">Tên quy định</label>

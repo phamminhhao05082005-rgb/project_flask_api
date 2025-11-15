@@ -3,6 +3,7 @@ from models import NhanVienBase
 import hashlib
 from models import NhanVienBase, LinhKien, HangMuc
 from init import db
+from flask import flash
 
 def auth_user(username, password):
     password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
@@ -108,8 +109,12 @@ def get_all_hangmuc():
 def get_hangmuc_by_id(id):
     return HangMuc.query.get(id)
 
-def create_hangmuc(ten):
-    hm = HangMuc(ten_hang_muc=ten)
+def create_hangmuc(ten, quanly_id, mo_ta=None):
+    hm = HangMuc(
+        ten_hang_muc=ten,
+        mo_ta=mo_ta,
+        quanly_id=quanly_id
+    )
     db.session.add(hm)
     db.session.commit()
 
@@ -123,10 +128,30 @@ def delete_hangmuc(id):
     hm = get_hangmuc_by_id(id)
     if hm:
         if hm.linh_kiens:
-            return False, "Danh mục này vẫn còn linh kiện, không thể xóa!"
+            return False, "Hạng mục này vẫn còn linh kiện, không thể xóa!"
         db.session.delete(hm)
         db.session.commit()
         return True, "Xóa hạng mục thành công!"
+
 def get_hangmuc_paginate(page=1, per_page=5):
     return HangMuc.query.order_by(HangMuc.id.asc()).paginate(page=page, per_page=per_page)
+
+def is_name_unique(model_class, name, exclude_id=None, field_name=None):
+
+    if field_name is None:
+        if model_class.__name__ == "LinhKien":
+            field_name = 'ten_linh_kien'
+        elif model_class.__name__ == "HangMuc":
+            field_name = 'ten_hang_muc'
+        elif model_class.__name__ == "QuyDinh":
+            field_name = 'ten_quy_dinh'
+        else:
+            field_name = 'ten'
+
+    query = model_class.query.filter(getattr(model_class, field_name) == name.strip())
+    if exclude_id:
+        query = query.filter(model_class.id != exclude_id)
+    return query.first() is None
+
+
 

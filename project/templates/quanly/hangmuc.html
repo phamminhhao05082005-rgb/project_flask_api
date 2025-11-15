@@ -2,21 +2,10 @@
 
 {% block quanly_content %}
 <div class="d-flex justify-content-between mb-3">
-    <h2>Danh sách danh mục</h2>
-    <a href="{{ url_for('quanly_hangmuc_create') }}" class="btn btn-success">Tạo danh mục mới</a>
+    <h2>Danh sách hạng mục</h2>
+    <a href="{{ url_for('quanly_hangmuc_create') }}" class="btn btn-success">Tạo hạng mục mới</a>
 </div>
-
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    {% for category, message in messages %}
-      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
-    {% endfor %}
-  {% endif %}
-{% endwith %}
-
+{% include 'layout/flash_messages.html' %}
 <table class="table table-striped">
     <thead>
         <tr>

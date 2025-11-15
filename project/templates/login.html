@@ -4,6 +4,7 @@
 
 {% block content %}
 <h1 class="text-center text-success mt-1">ĐĂNG NHẬP</h1>
+{% include 'layout/flash_messages.html' %}
 <form method="post" action="/login">
     <div class="form-floating mb-3 mt-3">
         <input type="text" class="form-control" id="email" placeholder="Tên đăng nhập" name="username" />
