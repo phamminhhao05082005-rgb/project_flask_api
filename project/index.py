@@ -14,7 +14,6 @@ def index():
 def load_user(pk):
     return dao.get_user_by_id(pk)
 
-
 @app.route('/login', methods=['POST'])
 def login_process():
     username = request.form.get('username')
