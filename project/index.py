@@ -5,13 +5,16 @@ from project import dao
 from models import RoleEnum, LinhKien, HangMuc
 import math
 
+
 @app.route('/login')
 def index():
     return render_template('login.html')
 
+
 @login.user_loader
 def load_user(pk):
     return dao.get_user_by_id(pk)
+
 
 @app.route('/login', methods=['POST'])
 def login_process():
@@ -47,6 +50,7 @@ def tiepnhan_dashboard():
         return check
     return render_template('NVTiepNhan/tiepnhan.html')
 
+
 @app.route('/suachua')
 @login_required
 def suachua_dashboard():
@@ -54,6 +58,7 @@ def suachua_dashboard():
     if check:
         return check
     return render_template('NVSuaChua/suachua.html')
+
 
 @app.route('/thungan')
 @login_required
@@ -63,6 +68,7 @@ def thungan_dashboard():
         return check
     return render_template('NVThuNgan/thungan.html')
 
+
 @app.route('/quanly')
 @login_required
 def quanly_dashboard():
@@ -71,11 +77,13 @@ def quanly_dashboard():
         return check
     return render_template('quanly/base_quanly.html')
 
+
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
     return render_template('login.html')
+
 
 @app.route('/quanly/linhkien')
 @login_required
@@ -98,6 +106,7 @@ def quanly_linhkien():
         selected_hangmuc=hangmuc_id
     )
 
+
 @app.route('/quanly/linhkien/create', methods=['GET', 'POST'])
 @login_required
 def quanly_linhkien_create():
@@ -108,21 +117,58 @@ def quanly_linhkien_create():
     hangmucs = dao.get_all_hangmuc()
     if request.method == 'POST':
         ten = request.form['ten'].strip()
-        try:
-            gia = float(request.form['gia'])
-            tien_cong = float(request.form['tien_cong'])
-            hangmuc_id = int(request.form['hangmuc'])
-        except ValueError:
-            flash("Dữ liệu không hợp lệ!", "danger")
-            return render_template('quanly/tao_or_xoa_lk.html', hangmucs=hangmucs, linhkien=None)
+        gia = float(request.form['gia'])
+        tien_cong = float(request.form['tien_cong'])
+        hangmuc_id = int(request.form['hangmuc'])
 
-        if gia <= 0:
-            flash("Giá linh kiện phải lớn hơn 0!", "danger")
-        elif tien_cong < 0:
-            flash("Tiền công không được âm!", "danger")
-        elif not dao.is_name_unique(LinhKien, ten, field_name='ten_linh_kien'):
-            flash("Tên linh kiện đã tồn tại!", "danger")
-        else:
+        dao.create_linhkien(
+            ten=ten,
+            gia=gia,
+            tien_cong=tien_cong,
+            hangmuc_id=hangmuc_id,
+            quanly_id=current_user.id
+        )
+        flash("Tạo linh kiện thành công!", "success")
+        return redirect(url_for('quanly_linhkien'))
+
+    return render_template('quanly/tao_or_xoa_lk.html', hangmucs=hangmucs, linhkien=None)
+
+
+
+@app.route('/quanly/linhkien/create-multi', methods=['GET', 'POST'])
+@login_required
+def quanly_linhkien_create_multi():
+    check = check_role(RoleEnum.QUANLY)
+    if check:
+        return check
+
+    hangmucs = dao.get_all_hangmuc()
+
+    if request.method == 'POST':
+        same_category = request.form.get('same_category') == '1'
+
+        common_hangmuc = request.form.get('common_hangmuc') if same_category else None
+
+        ten_list = request.form.getlist('ten[]')
+        gia_list = request.form.getlist('gia[]')
+        tien_cong_list = request.form.getlist('tien_cong[]')
+        hangmuc_list = request.form.getlist('hangmuc[]')
+
+        created_count = 0
+
+        for idx in range(len(ten_list)):
+            ten = ten_list[idx].strip()
+            if not ten:
+                continue
+
+            try:
+                gia = float(gia_list[idx])
+                tien_cong = float(tien_cong_list[idx])
+            except:
+                continue
+
+            hangmuc_id = common_hangmuc if same_category else hangmuc_list[idx]
+
             dao.create_linhkien(
                 ten=ten,
                 gia=gia,
@@ -130,12 +176,13 @@ def quanly_linhkien_create():
                 hangmuc_id=hangmuc_id,
                 quanly_id=current_user.id
             )
-            flash("Tạo linh kiện thành công!", "success")
-            return redirect(url_for('quanly_linhkien'))
+            created_count += 1
 
-        return render_template('quanly/tao_or_xoa_lk.html', hangmucs=hangmucs, linhkien=None)
+        flash(f"Tạo thành công {created_count} linh kiện!", "success")
+        return redirect(url_for('quanly_linhkien'))
 
-    return render_template('quanly/tao_or_xoa_lk.html', hangmucs=hangmucs, linhkien=None)
+    return render_template('quanly/tao_nhieu_lk.html', hangmucs=hangmucs)
+
 
 @app.route('/quanly/linhkien/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -177,6 +224,7 @@ def quanly_linhkien_edit(id):
 
     return render_template('quanly/tao_or_xoa_lk.html', hangmucs=hangmucs, linhkien=lk)
 
+
 @app.route('/quanly/linhkien/delete/<int:id>', methods=['POST'])
 @login_required
 def quanly_linhkien_delete(id):
@@ -188,6 +236,28 @@ def quanly_linhkien_delete(id):
     flash("Xóa linh kiện thành công", "success")
     return redirect(url_for('quanly_linhkien'))
 
+@app.route('/quanly/linhkien/delete-multi', methods=['GET', 'POST'])
+@login_required
+def quanly_linhkien_delete_multi():
+    check = check_role(RoleEnum.QUANLY)
+    if check:
+        return check
+
+    if request.method == 'POST':
+        ids = request.form.getlist('ids')
+        deleted_count = 0
+        for id in ids:
+            if dao.delete_linhkien(id):
+                deleted_count += 1
+        flash(f"Đã xóa {deleted_count} linh kiện!", "success")
+        return redirect(url_for('quanly_linhkien'))
+
+    page = request.args.get('page', 1, type=int)
+    linhkiens = dao.get_linhkien_paginate(page=page, per_page=10)
+    return render_template('quanly/xoa_nhieu_lk.html', linhkiens=linhkiens)
+
+
+
 @app.route('/quanly/quydinh')
 @login_required
 def quanly_quydinh():
@@ -198,6 +268,7 @@ def quanly_quydinh():
     page = request.args.get('page', 1, type=int)
     quydinhs = dao.get_quydinh_paginate(page=page, per_page=5)
     return render_template('quanly/quydinh.html', quydinhs=quydinhs)
+
 
 @app.route('/quanly/quydinh/create', methods=['GET', 'POST'])
 @login_required
@@ -237,6 +308,7 @@ def quanly_quydinh_edit(id):
 
     return render_template('quanly/tao_or_xoa_qd.html', quydinh=qd)
 
+
 @app.route('/quanly/quydinh/delete/<int:id>', methods=['POST'])
 @login_required
 def quanly_quydinh_delete(id):
@@ -248,6 +320,7 @@ def quanly_quydinh_delete(id):
     flash("Xóa quy định thành công", "success")
     return redirect(url_for('quanly_quydinh'))
 
+
 @app.route('/quanly/baocao')
 @login_required
 def quanly_baocao():
@@ -255,6 +328,7 @@ def quanly_baocao():
     if check:
         return check
     return render_template('quanly/baocao.html')
+
 
 @app.route('/quanly/hangmuc')
 @login_required
@@ -264,9 +338,10 @@ def quanly_hangmuc():
         return check
 
     page = request.args.get('page', 1, type=int)
-    hangmucs = dao.get_hangmuc_paginate(page=page, per_page=5)
+    keyword = request.args.get('q', '')
+    hangmucs = dao.get_hangmuc_paginate(page=page, per_page=5, keyword=keyword)
 
-    return render_template('quanly/hangmuc.html', hangmucs=hangmucs)
+    return render_template('quanly/hangmuc.html', hangmucs=hangmucs, keyword=keyword)
 
 
 @app.route('/quanly/hangmuc/create', methods=['GET', 'POST'])
@@ -290,6 +365,7 @@ def quanly_hangmuc_create():
 
     return render_template('quanly/tao_or_sua_hm.html', hangmuc=None)
 
+
 @app.route('/quanly/hangmuc/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def quanly_hangmuc_edit(id):
@@ -310,6 +386,7 @@ def quanly_hangmuc_edit(id):
 
     return render_template('quanly/tao_or_sua_hm.html', hangmuc=hm)
 
+
 @app.route('/quanly/hangmuc/delete/<int:id>', methods=['POST'])
 @login_required
 def quanly_hangmuc_delete(id):
@@ -326,6 +403,7 @@ def check_role(*allowed_roles):
     if current_user.role not in allowed_roles:
         abort(403)
     return None
+
 
 if __name__ == '__main__':
     from project import admin

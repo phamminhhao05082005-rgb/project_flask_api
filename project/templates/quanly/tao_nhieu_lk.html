@@ -1,0 +1,79 @@
+{% extends 'quanly/base_quanly.html' %}
+
+{% block quanly_content %}
+<h2 class="mb-3">Thêm nhiều linh kiện</h2>
+
+<form method="post" id="multiForm">
+
+    <div class="mb-3">
+        <label class="form-label fw-bold">Kiểu hạng mục:</label><br>
+        <label><input type="radio" name="same_category" value="1" checked> Chung 1 hạng mục</label>
+        <label class="ms-3"><input type="radio" name="same_category" value="0"> Khác hạng mục</label>
+    </div>
+
+    <div id="commonCategoryBox" class="mb-3">
+        <label class="form-label">Hạng mục:</label>
+        <select class="form-select" name="common_hangmuc">
+            {% for hm in hangmucs %}
+            <option value="{{ hm.id }}">{{ hm.ten_hang_muc }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <table class="table" id="itemsTable">
+        <thead>
+            <tr>
+                <th>Tên linh kiện</th>
+                <th>Giá</th>
+                <th>Tiền công</th>
+                <th class="hangmuc-col">Hạng mục</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><input name="ten[]" class="form-control"></td>
+                <td><input name="gia[]" class="form-control" type="number" min="1000"></td>
+                <td><input name="tien_cong[]" class="form-control" type="number" min="0"></td>
+                <td class="hangmuc-col">
+                    <select name="hangmuc[]" class="form-select">
+                        {% for hm in hangmucs %}
+                        <option value="{{ hm.id }}">{{ hm.ten_hang_muc }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td><button type="button" class="btn btn-danger" onclick="removeRow(this)">X</button></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <button type="button" onclick="addRow()" class="btn btn-primary">+ Thêm dòng</button>
+    <button type="submit" class="btn btn-success ms-3">Lưu tất cả</button>
+    <a href="{{ url_for('quanly_linhkien') }}" class="btn btn-secondary">Quay lại</a>
+</form>
+
+<script>
+function addRow() {
+    let table = document.querySelector("#itemsTable tbody");
+    let row = table.rows[0].cloneNode(true);
+    row.querySelectorAll("input").forEach(i => i.value = "");
+    table.appendChild(row);
+}
+
+function removeRow(btn) {
+    let trs = document.querySelectorAll("#itemsTable tbody tr");
+    if (trs.length > 1) btn.closest("tr").remove();
+}
+
+document.querySelectorAll("input[name='same_category']").forEach(r => {
+    r.addEventListener("change", function() {
+        let hide = this.value === "1";
+        document.getElementById("commonCategoryBox").style.display = hide ? "block" : "none";
+        document.querySelectorAll(".hangmuc-col").forEach(c => c.style.display = hide ? "none" : "table-cell");
+    });
+});
+
+document.querySelectorAll(".hangmuc-col").forEach(c => c.style.display = "none");
+</script>
+
+{% endblock %}

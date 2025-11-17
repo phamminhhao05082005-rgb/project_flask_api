@@ -1,9 +1,6 @@
-from init import app
-from models import NhanVienBase
 import hashlib
-from models import NhanVienBase, LinhKien, HangMuc
+from models import NhanVienBase, LinhKien, HangMuc, QuyDinh
 from init import db
-from flask import flash
 
 def auth_user(username, password):
     password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
@@ -57,12 +54,6 @@ def delete_linhkien(id):
     db.session.delete(lk)
     db.session.commit()
     return True
-
-def get_all_hangmuc():
-    return HangMuc.query.all()
-
-from models import QuyDinh
-from init import db
 
 # cac ham thao tac voi quy dinh
 
@@ -127,8 +118,11 @@ def delete_hangmuc(id):
         db.session.commit()
         return True, "Xóa hạng mục thành công!"
 
-def get_hangmuc_paginate(page=1, per_page=5):
-    return HangMuc.query.order_by(HangMuc.id.asc()).paginate(page=page, per_page=per_page)
+def get_hangmuc_paginate(page=1, per_page=5, keyword=None):
+    query = HangMuc.query
+    if keyword:
+        query = query.filter(HangMuc.ten_hang_muc.contains(keyword))
+    return query.order_by(HangMuc.id.asc()).paginate(page=page, per_page=per_page)
 
 def is_name_unique(model_class, name, exclude_id=None, field_name=None):
 

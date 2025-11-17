@@ -13,14 +13,14 @@
     </div>
 
     <div class="mb-3">
-        <label class="form-label">Giá (nghìn đồng)</label>
-        <input type="number" class="form-control" name="gia" required
+        <label class="form-label">Giá (VND)</label>
+        <input type="number" class="form-control" name="gia" min="1000" required
                value="{{ linhkien.gia if linhkien else '' }}">
     </div>
 
     <div class="mb-3">
-        <label class="form-label">Tiền công (nghìn đồng)</label>
-        <input type="number" class="form-control" name="tien_cong" required
+        <label class="form-label">Tiền công (VND)</label>
+        <input type="number" class="form-control" name="tien_cong" min="0" required
                value="{{ linhkien.tien_cong if linhkien else 0 }}">
     </div>
 
@@ -37,6 +37,6 @@
     </div>
 
     <button type="submit" class="btn btn-success">Lưu</button>
-    <a href="{{ url_for('quanly_linhkien') }}" class="btn btn-secondary">Hủy</a>
+    <a href="{{ url_for('quanly_linhkien') }}" class="btn btn-secondary">Quay lại</a>
 </form>
 {% endblock %}
