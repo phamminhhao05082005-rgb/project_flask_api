@@ -2,7 +2,7 @@
 
 {% block quanly_content %}
 <h2 class="mb-3">Thêm nhiều linh kiện</h2>
-
+{% include 'layout/flash_messages.html' %}
 <form method="post" id="multiForm">
 
     <div class="mb-3">
@@ -32,7 +32,7 @@
         </thead>
         <tbody>
             <tr>
-                <td><input name="ten[]" class="form-control"></td>
+                <td><input name="ten[]" class="form-control" required></td>
                 <td><input name="gia[]" class="form-control" type="number" min="1000"></td>
                 <td><input name="tien_cong[]" class="form-control" type="number" min="0"></td>
                 <td class="hangmuc-col">

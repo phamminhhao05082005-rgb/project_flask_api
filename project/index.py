@@ -178,6 +178,10 @@ def quanly_linhkien_create_multi():
             )
             created_count += 1
 
+        if created_count == 0:
+            flash("Chưa có linh kiện nào hợp lệ để tạo!", "warning")
+            return render_template('quanly/tao_nhieu_lk.html', hangmucs=hangmucs)
+
         flash(f"Tạo thành công {created_count} linh kiện!", "success")
         return redirect(url_for('quanly_linhkien'))
 
@@ -245,6 +249,12 @@ def quanly_linhkien_delete_multi():
 
     if request.method == 'POST':
         ids = request.form.getlist('ids')
+        if not ids:
+            flash("Bạn chưa chọn linh kiện nào để xoá!", "warning")
+            return redirect(url_for('quanly_linhkien_delete_multi',
+                                    page=request.args.get('page', 1),
+                                    hangmuc=request.args.get('hangmuc'),
+                                    q=request.args.get('q')))
         deleted_count = 0
         for id in ids:
             if dao.delete_linhkien(id):
@@ -253,9 +263,13 @@ def quanly_linhkien_delete_multi():
         return redirect(url_for('quanly_linhkien'))
 
     page = request.args.get('page', 1, type=int)
-    linhkiens = dao.get_linhkien_paginate(page=page, per_page=10)
-    return render_template('quanly/xoa_nhieu_lk.html', linhkiens=linhkiens)
-
+    hangmuc_id = request.args.get('hangmuc', type=int)
+    keyword = request.args.get('q', '')
+    linhkiens = dao.get_linhkien_paginate(page=page, per_page=5, hangmuc_id=hangmuc_id, keyword=keyword)
+    hangmucs = dao.get_all_hangmuc()
+    return render_template('quanly/xoa_nhieu_lk.html', linhkiens=linhkiens,
+                           hangmucs=hangmucs,
+                           selected_hangmuc=hangmuc_id)
 
 
 @app.route('/quanly/quydinh')
@@ -266,8 +280,10 @@ def quanly_quydinh():
         return check
 
     page = request.args.get('page', 1, type=int)
-    quydinhs = dao.get_quydinh_paginate(page=page, per_page=5)
-    return render_template('quanly/quydinh.html', quydinhs=quydinhs)
+    keyword = request.args.get('q', '')
+    quydinhs = dao.get_quydinh_paginate(page=page, per_page=5, keyword=keyword)
+
+    return render_template('quanly/quydinh.html', quydinhs=quydinhs, keyword=keyword)
 
 
 @app.route('/quanly/quydinh/create', methods=['GET', 'POST'])

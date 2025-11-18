@@ -2,72 +2,163 @@
 
 {% block quanly_content %}
 <h2>Xóa linh kiện</h2>
-
+{% include 'layout/flash_messages.html' %}
 <p>Chọn các linh kiện muốn xoá và nhấn nút Xoá.</p>
 
-<form action="{{ url_for('quanly_linhkien_delete_multi') }}" method="POST"
+<form method="get" action="{{ url_for('quanly_linhkien_delete_multi') }}" class="d-flex align-items-center mb-3">
+    <label class="me-2">Lọc theo hạng mục:</label>
+    <select class="form-select me-3" name="hangmuc" style="width:200px;" onchange="this.form.submit()">
+        <option value="">-- Tất cả --</option>
+        {% for hm in hangmucs %}
+        <option value="{{ hm.id }}" {% if selected_hangmuc== hm.id %}selected{% endif %}>
+            {{ hm.ten_hang_muc }}
+        </option>
+        {% endfor %}
+    </select>
+
+    <label class="me-2">Tìm kiếm:</label>
+    <input type="text" class="form-control me-3" name="q" placeholder="Nhập tên linh kiện..."
+           value="{{ request.args.get('q','') }}" style="width:200px;">
+
+    <button type="submit" class="btn btn-primary">Lọc</button>
+
+    <a href="{{ url_for('quanly_linhkien_delete_multi') }}" class="btn btn-outline-secondary ms-2">Reset</a>
+</form>
+
+<form id="deleteForm" action="{{ url_for('quanly_linhkien_delete_multi') }}" method="POST"
       onsubmit="return confirm('Bạn có chắc muốn xoá các linh kiện đã chọn?');">
 
-<table class="table table-bordered">
-    <thead>
+    <table class="table table-bordered">
+        <thead>
         <tr>
-            <th>Chọn</th>
-            <th>ID</th>
+            <th><input type="checkbox" id="selectAll"></th>
             <th>Tên linh kiện</th>
-            <th>Giá</th>
+            <th>Giá (VND)</th>
+            <th>Tiền công (VND)</th>
         </tr>
-    </thead>
-    <tbody>
+        </thead>
+        <tbody>
         {% for lk in linhkiens.items %}
         <tr>
             <td><input type="checkbox" name="ids" value="{{ lk.id }}"></td>
-            <td>{{ lk.id }}</td>
             <td>{{ lk.ten_linh_kien }}</td>
             <td>{{ lk.gia }}</td>
+            <td>{{ lk.tien_cong }}</td>
         </tr>
         {% endfor %}
-    </tbody>
-</table>
+        </tbody>
+    </table>
 
-<!-- PHÂN TRANG -->
-<nav>
-    <ul class="pagination">
-        {% if linhkiens.has_prev %}
-        <li class="page-item">
-            <a class="page-link" href="{{ url_for('quanly_linhkien_delete_multi', page=linhkiens.prev_num) }}">«</a>
-        </li>
-        {% endif %}
-
-        {% for p in linhkiens.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-            {% if p %}
-                {% if p == linhkiens.page %}
-                <li class="page-item active"><a class="page-link">{{ p }}</a></li>
-                {% else %}
-                <li class="page-item"><a class="page-link" href="{{ url_for('quanly_linhkien_delete_multi', page=p) }}">{{ p }}</a></li>
-                {% endif %}
-            {% else %}
-                <li class="page-item disabled"><a class="page-link">…</a></li>
+    <nav>
+        <ul class="pagination">
+            {% if linhkiens.has_prev %}
+            <li class="page-item">
+                <a class="page-link"
+                   href="{{ url_for('quanly_linhkien_delete_multi', page=linhkiens.prev_num, hangmuc=request.args.get('hangmuc'), q=request.args.get('q')) }}">«</a>
+            </li>
             {% endif %}
-        {% endfor %}
 
-        {% if linhkiens.has_next %}
-        <li class="page-item">
-            <a class="page-link" href="{{ url_for('quanly_linhkien_delete_multi', page=linhkiens.next_num) }}">»</a>
-        </li>
-        {% endif %}
-    </ul>
-</nav>
+            {% for p in linhkiens.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if p %}
+            {% if p == linhkiens.page %}
+            <li class="page-item active"><a class="page-link">{{ p }}</a></li>
+            {% else %}
+            <li class="page-item">
+                <a class="page-link"
+                   href="{{ url_for('quanly_linhkien_delete_multi', page=p, hangmuc=request.args.get('hangmuc'), q=request.args.get('q')) }}">{{
+                    p }}</a>
+            </li>
+            {% endif %}
+            {% else %}
+            <li class="page-item disabled"><a class="page-link">…</a></li>
+            {% endif %}
+            {% endfor %}
 
+            {% if linhkiens.has_next %}
+            <li class="page-item">
+                <a class="page-link"
+                   href="{{ url_for('quanly_linhkien_delete_multi', page=linhkiens.next_num, hangmuc=request.args.get('hangmuc'), q=request.args.get('q')) }}">»</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
 
-<button type="submit" class="btn btn-danger">Xóa các linh kiện</button>
-<a href="{{ url_for('quanly_linhkien') }}" class="btn btn-secondary ms-2">Quay lại</a>
+    <button type="submit" class="btn btn-danger">Xóa các linh kiện</button>
+    <a href="{{ url_for('quanly_linhkien') }}" class="btn btn-secondary ms-2"
+       onclick="sessionStorage.removeItem('checkedIds');">
+        Quay lại
+    </a>
+
 </form>
 
 <script>
-function toggleAll(source) {
-    const checkboxes = document.querySelectorAll('input[name="ids[]"]');
-    checkboxes.forEach(cb => cb.checked = source.checked);
-}
+    // Lưu checkbox đã chọn trong sessionStorage
+    function updateCheckedStorage() {
+        let checkedIds = JSON.parse(sessionStorage.getItem('checkedIds') || "[]");
+
+        document.querySelectorAll('#deleteForm input[name="ids"]').forEach(cb => {
+            const id = cb.value;
+            if (cb.checked && !checkedIds.includes(id)) {
+                checkedIds.push(id);
+            } else if (!cb.checked && checkedIds.includes(id)) {
+                checkedIds = checkedIds.filter(x => x !== id);
+            }
+        });
+
+        sessionStorage.setItem('checkedIds', JSON.stringify(checkedIds));
+        updateSelectAllCheckbox();
+    }
+
+    // Tick lại checkbox khi load trang
+    function restoreChecked() {
+        const checkedIds = JSON.parse(sessionStorage.getItem('checkedIds') || "[]");
+        document.querySelectorAll('#deleteForm input[name="ids"]').forEach(cb => {
+            cb.checked = checkedIds.includes(cb.value);
+        });
+        updateSelectAllCheckbox();
+    }
+
+    // Cập nhật trạng thái nút Chọn tất cả
+    function updateSelectAllCheckbox() {
+        const allCheckbox = document.getElementById('selectAll');
+        if (allCheckbox) {
+            const allChecked = Array.from(document.querySelectorAll('#deleteForm input[name="ids"]'))
+                                    .every(cb => cb.checked);
+            allCheckbox.checked = allChecked;
+        }
+    }
+
+    // Chọn tất cả checkbox trên trang
+    function toggleAll(source) {
+        document.querySelectorAll('#deleteForm input[name="ids"]').forEach(cb => {
+            cb.checked = source.checked;
+        });
+        updateCheckedStorage();
+    }
+
+    // Event listener
+    document.addEventListener('DOMContentLoaded', () => {
+        restoreChecked();
+        document.querySelectorAll('#deleteForm input[name="ids"]').forEach(cb => {
+            cb.addEventListener('change', updateCheckedStorage);
+        });
+        const selectAll = document.getElementById('selectAll');
+        if (selectAll) selectAll.addEventListener('click', () => toggleAll(selectAll));
+    });
+
+    // Khi submit form xóa, thêm tất cả checkbox đã tick vào form
+    document.getElementById('deleteForm').addEventListener('submit', function(e){
+        const checkedIds = JSON.parse(sessionStorage.getItem('checkedIds') || "[]");
+
+        checkedIds.forEach(id => {
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'ids';
+            hidden.value = id;
+            this.appendChild(hidden);
+        });
+        sessionStorage.removeItem('checkedIds'); // Xóa storage sau khi submit
+    });
 </script>
 
 {% endblock %}

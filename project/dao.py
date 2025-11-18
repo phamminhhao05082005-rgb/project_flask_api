@@ -57,8 +57,11 @@ def delete_linhkien(id):
 
 # cac ham thao tac voi quy dinh
 
-def get_quydinh_paginate(page=1, per_page=5):
-    return QuyDinh.query.paginate(page=page, per_page=per_page)
+def get_quydinh_paginate(page=1, per_page=5, keyword=None):
+    query = QuyDinh.query
+    if keyword:
+        query = query.filter(QuyDinh.ten_quy_dinh.contains(keyword))
+    return query.order_by(QuyDinh.id.asc()).paginate(page=page, per_page=per_page)
 
 def get_quydinh_by_id(id):
     return QuyDinh.query.get(id)
