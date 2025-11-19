@@ -7,3 +7,6 @@ cách lấy project về máy
 - chạy lệnh pip install -r requirements.txt
 - chạy models
 - chạy index
+- chạy link http://127.0.0.1:5000/login
+- đăng nhập bằng các tài khoản đã có ở models
+  
