@@ -1,0 +1,115 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<section class="container mt-4">
+
+    <h1 class="text-primary">Chi Tiết Phiếu Sửa Chữa #{{ psc.id }}</h1>
+    <a href="{{ url_for('suachua_dashboard') }}" class="btn btn-secondary mb-3">
+        <i class="bi bi-arrow-left"></i> Quay lại Dashboard
+    </a>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <strong>Thông tin chung (Phiếu Tiếp Nhận #{{ psc.ptn_id }})</strong>
+        </div>
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>Khách hàng:</strong> {{ psc.phieu_tiep_nhan.xe.khachhang.name }}
+                </li>
+                <li class="list-group-item"><strong>Biển số:</strong> {{ psc.phieu_tiep_nhan.xe.bien_so }}</li>
+                <li class="list-group-item"><strong>Loại xe:</strong> {{ psc.phieu_tiep_nhan.xe.loai_xe.value }}</li>
+                <li class="list-group-item"><strong>Lỗi đã báo:</strong>
+                    <ul>
+                        {% for loi in psc.phieu_tiep_nhan.lois %}
+                        <li>{{ loi.ten_loi }}</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <strong>Chi tiết linh kiện/dịch vụ (Do: {{ psc.nhan_vien_sua_chua.name }})</strong>
+        </div>
+        <div class="card-body">
+
+            <form method="POST" class="border p-3 mb-3 rounded bg-light">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-6">
+                        <label for="linh_kien_id" class="form-label">Chọn linh kiện/dịch vụ:</label>
+                        <select id="linh_kien_id" name="linh_kien_id" class="form-select" required>
+                            <option value="" disabled selected>-- Chọn --</option>
+                            {% for lk in all_linh_kien %}
+                            <option value="{{ lk.id }}">
+                                {{ lk.ten_linh_kien }} (Giá: {{ lk.gia }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="so_luong" class="form-label">Số lượng:</label>
+                        <input type="number" id="so_luong" name="so_luong" class="form-control" value="1" min="1"
+                               required>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-plus-circle"></i> Thêm vào phiếu
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Tên linh kiện/dịch vụ</th>
+                    <th>Số lượng</th>
+                    <th>Đơn giá (Linh kiện + Công)</th>
+                    <th>Thành tiền</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for ctsc in psc.chi_tiet_sua_chuas %}
+                <tr>
+                    <td>{{ ctsc.linh_kien.ten_linh_kien }}</td>
+                    <td>{{ ctsc.so_luong }}</td>
+                    <td>{{ "%.0f"|format(ctsc.don_gia) }}</td>
+                    <td>{{ "%.0f"|format(ctsc.don_gia * ctsc.so_luong) }}</td>
+                    <td>
+                        <form action="{{ url_for('suachua_delete_item', ctsc_id=ctsc.id) }}" method="POST"
+                              onsubmit="return confirm('Bạn muốn xóa món này?');">
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted">Chưa thêm linh kiện nào.</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot class="table-group-divider">
+                <tr class="fw-bold">
+                    <td colspan="3" class="text-end">TỔNG CỘNG:</td>
+                    <td>{{ "%.0f"|format(psc.tong_tien) }}</td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}
