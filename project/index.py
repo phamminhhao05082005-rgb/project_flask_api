@@ -2,7 +2,7 @@ from flask import render_template, request, redirect, url_for, flash, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from init import app, login
 from project import dao
-from models import RoleEnum, LinhKien, HangMuc
+from models import RoleEnum, LinhKien, HangMuc, LoaiXe, ChiTietSuaChua
 import math
 
 
@@ -42,13 +42,107 @@ def login_process():
 
     return redirect(url_for(redirect_map.get(u.role, 'login')))
 
+
 @app.route('/tiepnhan')
 @login_required
 def tiepnhan_dashboard():
     check = check_role(RoleEnum.TIEPNHAN)
     if check:
         return check
-    return render_template('NVTiepNhan/tiepnhan.html')
+
+    page = request.args.get('page', 1, type=int)
+    danh_sach_ptn = dao.get_all_phieu_tiep_nhan(page=page, per_page=5)
+
+    return render_template(
+        'NVTiepNhan/tiepnhan.html',
+        danh_sach_ptn=danh_sach_ptn
+    )
+
+
+@app.route('/tiepnhan/taophieu', methods=['GET', 'POST'])
+@login_required
+def tiepnhan_taophieu():
+    check = check_role(RoleEnum.TIEPNHAN)
+    if check:
+        return check
+
+    if request.method == 'POST':
+        loi_ids = request.form.getlist('loi_ids')  # danh sách lỗi đã tick
+
+        # Bắt buộc phải chọn ít nhất 1 lỗi
+        if not loi_ids:
+            flash("Bạn phải chọn ít nhất 1 lỗi!", "danger")
+            return redirect(url_for('tiepnhan_taophieu'))
+
+        data = {
+            "customer_name": request.form.get('customer_name'),
+            "customer_sdt": request.form.get('customer_sdt'),
+            "xe_bien_so": request.form.get('xe_bien_so'),
+            "xe_loai_xe": request.form.get('xe_loai_xe'),
+            "loi_ids": loi_ids,
+            "description": request.form.get('description')
+        }
+
+        try:
+            dao.create_phieu_tiep_nhan(data=data, nvtn_id=current_user.id)
+            flash("Tạo phiếu tiếp nhận thành công!", "success")
+            return redirect(url_for('tiepnhan_dashboard'))
+        except Exception as e:
+            flash(f"Đã xảy ra lỗi: {str(e)}", "danger")
+            return redirect(url_for('tiepnhan_taophieu'))
+
+    lois = dao.get_all_loi()
+    loai_xes = LoaiXe
+
+    return render_template('NVTiepNhan/taophieu.html', lois=lois, loai_xes=loai_xes)
+
+
+@app.route('/tiepnhan/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def tiepnhan_edit(id):
+    check = check_role(RoleEnum.TIEPNHAN)
+    if check:
+        return check
+
+    if request.method == 'POST':
+        new_loi_ids = request.form.getlist('loi_ids')
+        try:
+            dao.update_phieu_tiep_nhan(id, new_loi_ids)
+            flash("Cập nhật phiếu thành công!", "success")
+            return redirect(url_for('tiepnhan_dashboard'))
+        except Exception as e:
+            flash(f"Lỗi khi cập nhật: {str(e)}", "danger")
+
+    # xu ly khi GET
+    ptn = dao.get_phieu_tiep_nhan_by_id(id)
+    if not ptn:
+        flash("Phiếu tiếp nhận không tồn tại!", "danger")
+        return redirect(url_for('tiepnhan_dashboard'))
+
+    lois = dao.get_all_loi()
+    loai_xes = LoaiXe
+
+    return render_template(
+        'NVTiepNhan/taophieu.html',
+        ptn=ptn,
+        lois=lois,
+        loai_xes=loai_xes
+    )
+
+
+@app.route('/tiepnhan/delete/<int:id>', methods=['POST'])
+@login_required
+def tiepnhan_delete(id):
+    check = check_role(RoleEnum.TIEPNHAN)
+    if check:
+        return check
+
+    if dao.delete_phieu_tiep_nhan(id):
+        flash("Xóa phiếu tiếp nhận thành công!", "success")
+    else:
+        flash("Xóa thất bại, phiếu không tồn tại!", "danger")
+
+    return redirect(url_for('tiepnhan_dashboard'))
 
 
 @app.route('/suachua')
@@ -57,7 +151,90 @@ def suachua_dashboard():
     check = check_role(RoleEnum.SUACHUA)
     if check:
         return check
-    return render_template('NVSuaChua/suachua.html')
+
+    phieu_cho_sua = dao.get_ptn_cho_psc()
+
+    page = request.args.get('page', 1, type=int)
+    pscs = dao.get_all_psc(page=page, per_page=5)
+
+    return render_template('NVSuaChua/suachua.html', phieu_cho_sua=phieu_cho_sua, pscs=pscs)
+
+
+@app.route('/suachua/nhan-phieu/<int:ptn_id>', methods=['POST'])
+@login_required
+def suachua_nhan_phieu(ptn_id):
+    check = check_role(RoleEnum.SUACHUA)
+    if check:
+        return check
+
+    psc = dao.create_psc(ptn_id, current_user.id)
+    flash("Da nhan phieu, them linh kien")
+    return redirect(url_for('suachua_chi_tiet', psc_id=psc.id))
+
+
+@app.route('/suachua/chi-tiet/<int:psc_id>', methods=['GET', 'POST'])
+@login_required
+def suachua_chi_tiet(psc_id):
+    check = check_role(RoleEnum.SUACHUA)
+    if check:
+        return check
+
+    if request.method == 'POST':
+        linh_kien_id = request.form.get('linh_kien_id')
+        so_luong = request.form.get('so_luong', 1, type=int)
+
+        ok, message = dao.add_lk_to_psc(psc_id, linh_kien_id, so_luong)
+        flash(message, "success" if ok else "danger")
+        return redirect(url_for('suachua_chi_tiet', psc_id=psc_id))
+
+    # show trang
+    psc = dao.get_psc_by_id(psc_id)
+    if not psc:
+        flash("Phiếu sửa chữa không tồn tại.", "danger")
+        return redirect(url_for('suachua_dashboard'))
+
+    if psc.nvsc_id != current_user.id:
+        flash("Bạn không có quyền truy cập phiếu này.", "danger")
+        return redirect(url_for('suachua_dashboard'))
+
+    all_linh_kien = dao.get_all_linh_kien()
+
+    return render_template(
+        'NVSuaChua/chitiet_suachua.html',
+        psc=psc,
+        all_linh_kien=all_linh_kien
+    )
+
+
+@app.route('/suachua/delete/<int:psc_id>', methods=['POST'])
+@login_required
+def suachua_delete(psc_id):
+    check = check_role(RoleEnum.SUACHUA)
+    if check:
+        return check
+
+    ok, message = dao.delete_psc(psc_id)
+    flash(message, "success" if ok else "danger")
+    return redirect(url_for('suachua_dashboard'))
+
+
+@app.route('/suachua/chi_tiet/<int:ctsc_id>', methods=['POST'])
+@login_required
+def suachua_delete_item(ctsc_id):
+    check = check_role(RoleEnum.SUACHUA)
+    if check:
+        return check
+
+    ctsc = ChiTietSuaChua.query.get(ctsc_id)
+    if not ctsc_id:
+        flash("Chi tiet ko ton tai")
+        return redirect(url_for('suachua_dashboard'))
+
+    psc_id = ctsc.psc_id
+
+    ok, message = dao.delete_chitiet_psc(ctsc_id)
+    flash(message, "success" if ok else "danger")
+    return redirect(url_for('suachua_chi_tiet', psc_id=psc_id))
 
 
 @app.route('/thungan')
@@ -132,7 +309,6 @@ def quanly_linhkien_create():
         return redirect(url_for('quanly_linhkien'))
 
     return render_template('quanly/tao_or_xoa_lk.html', hangmucs=hangmucs, linhkien=None)
-
 
 
 @app.route('/quanly/linhkien/create-multi', methods=['GET', 'POST'])
@@ -239,6 +415,7 @@ def quanly_linhkien_delete(id):
     dao.delete_linhkien(id)
     flash("Xóa linh kiện thành công", "success")
     return redirect(url_for('quanly_linhkien'))
+
 
 @app.route('/quanly/linhkien/delete-multi', methods=['GET', 'POST'])
 @login_required

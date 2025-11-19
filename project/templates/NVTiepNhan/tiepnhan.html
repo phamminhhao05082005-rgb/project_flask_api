@@ -1,8 +1,122 @@
 {% extends 'layout/base.html' %}
 
 {% block content %}
-<section class="container">
-    <h1>Chào mừng đến với trang tiếp nhận</h1>
-    <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+<section class="container mt-4">
+    <h1 class="text-primary">Trang Tiếp Nhận</h1>
+{% include 'layout/flash_messages.html' %}
+    <div class="my-3">
+        <a href="{{ url_for('tiepnhan_taophieu') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Tạo phiếu tiếp nhận mới
+        </a>
+
+        <a href="{{ url_for('logout') }}" class="btn btn-danger float-end">
+            <i class="bi bi-box-arrow-right"></i> Logout
+        </a>
+    </div>
+
+    <hr>
+
+    <div id="collapseDanhSach">
+        <h2 class="mt-3">Danh sách phiếu đã tiếp nhận</h2>
+
+        <div class="accordion" id="accordionPhieuTiepNhan">
+
+            {% if not danh_sach_ptn %}
+            <div class="alert alert-info">Chưa có phiếu tiếp nhận nào.</div>
+
+            {% else %}
+            {% for ptn in danh_sach_ptn %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading-{{ ptn.id }}">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#collapse-{{ ptn.id }}"
+                            aria-expanded="false"
+                            aria-controls="collapse-{{ ptn.id }}">
+
+                        <strong>Phiếu #{{ ptn.id }}</strong>
+                        <span class="mx-2">|</span>
+                        Biển số: {{ ptn.xe.bien_so }}
+                        <span class="mx-2">|</span>
+                        Ngày: {{ ptn.ngay_tiep_nhan.strftime('%d-%m-%Y') }}
+                    </button>
+                </h2>
+
+                <div id="collapse-{{ ptn.id }}" class="accordion-collapse collapse"
+                     aria-labelledby="heading-{{ ptn.id }}"
+                     data-bs-parent="#accordionPhieuTiepNhan">
+                    <div class="accordion-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <strong>Khách hàng:</strong> {{ ptn.xe.khachhang.name }}
+                            </li>
+                            <li class="list-group-item">
+                                <strong>SĐT:</strong> {{ ptn.xe.khachhang.sdt }}
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Loại xe:</strong> {{ ptn.xe.loai_xe.value }}
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Nhân viên tiếp nhận:</strong> {{ ptn.nhan_vien_tiep_nhan.name }}
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Các lỗi đã báo:</strong>
+                                <ul class="mt-2">
+                                    {% for loi in ptn.lois %}
+                                    <li>{{ loi.ten_loi }}</li>
+                                    {% else %}
+                                    <li>(Không có lỗi cụ thể được chọn)</li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                        </ul>
+                        <hr>
+                        <div class="mt-2">
+                            <a href="{{ url_for('tiepnhan_edit', id=ptn.id) }}"
+                               class="btn btn-primary btn-sm">
+                                <i class="bi bi-pencil-square"></i> Sửa (Lỗi)
+                            </a>
+
+                            <form action="{{ url_for('tiepnhan_delete', id=ptn.id) }}"
+                                  method="POST"
+                                  style="display:inline;"
+                                  onsubmit="return confirm('Bạn có chắc muốn xóa phiếu này? Mọi Phiếu Sửa Chữa liên quan sẽ bị xóa theo!');">
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    <i class="bi bi-trash"></i> Xóa Phiếu
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if not danh_sach_ptn.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('tiepnhan_dashboard', page=danh_sach_ptn.prev_num) }}">
+                        &laquo; Trước
+                    </a>
+                </li>
+
+                {% for page_num in danh_sach_ptn.iter_pages() %}
+                {% if page_num %}
+                <li class="page-item {% if page_num == danh_sach_ptn.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('tiepnhan_dashboard', page=page_num) }}">{{ page_num }}</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% endif %}
+                {% endfor %}
+
+                <li class="page-item {% if not danh_sach_ptn.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('tiepnhan_dashboard', page=danh_sach_ptn.next_num) }}">
+                        Tiếp &raquo;
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
 </section>
 {% endblock %}

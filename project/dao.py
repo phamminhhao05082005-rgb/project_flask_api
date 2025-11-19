@@ -1,6 +1,13 @@
-import hashlib
-from models import NhanVienBase, LinhKien, HangMuc, QuyDinh
+from flask import flash
 from init import db
+from init import app
+import hashlib
+from models import (
+    NhanVienBase, LinhKien, HangMuc, Loi, KhachHang, Xe,
+    PhieuTiepNhan, Ptn_loi, LoaiXe, QuyDinh, PhieuSuaChua, ChiTietSuaChua
+)
+from sqlalchemy.orm import joinedload
+
 
 def auth_user(username, password):
     password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
@@ -54,6 +61,9 @@ def delete_linhkien(id):
     db.session.delete(lk)
     db.session.commit()
     return True
+
+def get_all_linh_kien():
+    return LinhKien.query.all()
 
 # cac ham thao tac voi quy dinh
 
@@ -143,6 +153,192 @@ def is_name_unique(model_class, name, exclude_id=None, field_name=None):
     if exclude_id:
         query = query.filter(model_class.id != exclude_id)
     return query.first() is None
+
+def get_all_loi():
+    return Loi.query.all()
+def get_loi_by_id(id):
+    return Loi.query.get(id)
+def get_loi_by_name(name):
+    return Loi.query.filter_by(ten_loi=name).first()
+def create_loi(ten_loi):
+    if get_loi_by_name(ten_loi):
+        return flash('Loi da ton tai', 'danger')
+
+    loi = Loi(ten_loi=ten_loi)
+    db.session.add(loi)
+    db.session.commit()
+def update_loi(id, ten_loi):
+    loi = get_loi_by_id(id)
+    if loi:
+        loi.ten_loi = ten_loi
+        db.session.commit()
+def delete_loi(id):
+    loi = get_loi_by_id(id)
+    if loi:
+        if loi.phieu_tiep_nhans:
+            return False, "Loi nam trong phieu tiep nhan, ko the xoa!"
+
+        db.session.delete(loi)
+        db.session.commit()
+        return True, "Xoa thanh cong!"
+    return False, "Khong tim thay loi."
+def get_loi_paginate(page=1, per_page=5):
+    return Loi.query.order_by(Loi.id.asc()).paginate(page=page, per_page=per_page)
+
+# cac thao tac voi xe
+def get_xe_by_bien_so(bien_so):
+    return Xe.query.filter_by(bien_so=bien_so).first()
+
+# cac ham thao tac voi phieu tiep nhan
+def create_phieu_tiep_nhan(data, nvtn_id):
+    with db.session.begin_nested():
+        kh = KhachHang.query.filter_by(sdt=data['customer_sdt']).first()
+        if not kh:
+            kh = KhachHang(name=data['customer_name'], sdt=data['customer_sdt'])
+            db.session.add(kh)
+            db.session.flush() # lay san id cua kh. Chua permanent, chi la temporary
+
+        # xe
+        xe = get_xe_by_bien_so(data['xe_bien_so'])
+        if not xe:
+            xe = Xe(
+                bien_so=data['xe_bien_so'],
+                loai_xe=LoaiXe[data['xe_loai_xe']],
+                khachhang_id=kh.id
+            )
+            db.session.add(xe)
+            db.session.flush()  # lay san id cua xe
+
+        # tao phieu tiep nhan
+        ptn = PhieuTiepNhan(
+            nvtn_id=nvtn_id,
+            xe_id=xe.id
+        )
+        db.session.add(ptn)
+        db.session.flush()  # lay san id cua ptn
+
+        # chi tiet loi
+        for loi_id in data['loi_ids']:
+            ptn_loi = Ptn_loi(
+                ptn_id=ptn.id,
+                loi_id=int(loi_id)
+            )
+            db.session.add(ptn_loi)
+
+    db.session.commit()
+def get_all_phieu_tiep_nhan(page=1, per_page=5):
+    return PhieuTiepNhan.query.options(
+        joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
+        joinedload(PhieuTiepNhan.nhan_vien_tiep_nhan),
+        joinedload(PhieuTiepNhan.lois)
+    ).order_by(PhieuTiepNhan.ngay_tiep_nhan.desc()).paginate(page=page, per_page=per_page)
+def get_phieu_tiep_nhan_by_id(id):
+    return PhieuTiepNhan.query.options(
+        joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
+        joinedload(PhieuTiepNhan.lois)
+    ).get(id)
+def update_phieu_tiep_nhan(id, new_loi_ids):
+    ptn = get_phieu_tiep_nhan_by_id(id)
+    if not ptn:
+        return None
+    # xoa loi cu
+    ptn.lois.clear()
+    for loi_id in new_loi_ids:
+        loi = get_loi_by_id(loi_id)
+        if loi:
+            ptn.lois.append(loi)
+    db.session.commit()
+    return ptn
+def delete_phieu_tiep_nhan(id):
+    ptn = PhieuTiepNhan.query.get(id)
+    if ptn:
+        db.session.delete(ptn)
+        db.session.commit()
+        return True
+    return False
+# def get_phieu_tiep_nhan_1():
+#     ptns = PhieuTiepNhan.query.all()
+#     res = []
+#     for ptn in ptns:
+#         bien_so = ptn.xe.bien_so
+#         cus_name = ptn.xe.khachhang_id.name
+#         res.append(f"{ptn.id} - {bien_so} - {cus_name}")
+#     return res
+
+
+# cac ham thao tac voi phieu sua chua
+
+def get_ptn_cho_psc():
+    return PhieuTiepNhan.query.options(
+        joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
+        joinedload(PhieuTiepNhan.lois)
+    ).filter(
+        ~PhieuTiepNhan.phieu_sua_chuas.any()
+    ).order_by(PhieuTiepNhan.ngay_tiep_nhan.desc()).all()
+def create_psc(ptn_id, nvsc_id):
+    ton_tai_psc = PhieuSuaChua.query.filter_by(ptn_id=ptn_id).first()
+    if ton_tai_psc:
+        return ton_tai_psc
+
+    psc = PhieuSuaChua(ptn_id=ptn_id, nvsc_id=nvsc_id, tong_tien=0)
+    db.session.add(psc)
+    db.session.commit()
+    return psc
+def get_psc_by_id(psc_id):
+    return PhieuSuaChua.query.options(
+        joinedload(PhieuSuaChua.chi_tiet_sua_chuas).joinedload(ChiTietSuaChua.linh_kien),
+        joinedload(PhieuSuaChua.phieu_tiep_nhan).joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
+        joinedload(PhieuSuaChua.phieu_tiep_nhan).joinedload(PhieuTiepNhan.lois),
+    ).get(psc_id)
+def add_lk_to_psc(psc_id, linh_kien_id, so_luong):
+    psc = get_psc_by_id(psc_id)
+    if not psc:
+        return False, "Phieu sua chua khong ton tai"
+
+    linh_kien = get_linhkien_by_id(linh_kien_id)
+    if not linh_kien:
+        return False, "Linh kien khong ton tai"
+
+    thanh_tien = linh_kien.gia * so_luong
+
+    ctsc = ChiTietSuaChua(
+        psc_id=psc_id,
+        linh_kien_id=linh_kien_id,
+        so_luong=so_luong,
+        don_gia=linh_kien.gia
+    )
+    db.session.add(ctsc)
+    psc.tong_tien = (psc.tong_tien or 0) + thanh_tien
+
+    db.session.commit()
+    return True, "Them linh kien thanh cong"
+def get_all_psc(page=1, per_page=5):
+    return PhieuSuaChua.query.options(
+        joinedload(PhieuSuaChua.phieu_tiep_nhan).joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
+        joinedload(PhieuSuaChua.nhan_vien_sua_chua)
+    ).order_by(PhieuSuaChua.id.desc()).paginate(page=page, per_page=per_page)
+
+def delete_psc(psc_id):
+    psc = PhieuSuaChua.query.get(psc_id)
+    if psc:
+        db.session.delete(psc)
+        db.session.commit()
+        return True, "Xoa phieu thanh cong"
+    return False, "Phieu sua chua khong ton tai"
+def delete_chitiet_psc(ctsc_id):
+    ctsc = ChiTietSuaChua.query.get(ctsc_id)
+    if not ctsc:
+        return False, "Cho tiet sc ko ton tai"
+
+    psc = PhieuSuaChua.query.get(ctsc.psc_id)
+    so_tien_can_tru = ctsc.don_gia * ctsc.so_luong
+
+    psc.tong_tien = max(0, (psc.tong_tien or 0) - so_tien_can_tru)
+
+    db.session.delete(ctsc)
+    db.session.commit()
+
+    return True, "Da xoa ctsc thanh cong"
 
 
 
