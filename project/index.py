@@ -152,7 +152,8 @@ def suachua_dashboard():
     if check:
         return check
 
-    phieu_cho_sua = dao.get_ptn_cho_psc()
+    page_phieuchosua = request.args.get('page_phieuchosua', 1, type=int)
+    phieu_cho_sua = dao.get_ptn_cho_psc(page=page_phieuchosua, per_page=5)
 
     page = request.args.get('page', 1, type=int)
     pscs = dao.get_all_psc(page=page, per_page=5)

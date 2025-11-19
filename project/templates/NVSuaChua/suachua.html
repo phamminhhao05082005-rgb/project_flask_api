@@ -6,7 +6,7 @@
         <h1 class="text-primary">Trang Sửa Chữa (Xin chào, {{ current_user.name }})</h1>
         <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
     </div>
-    {% include 'layout/flash_messages.html' %}
+
     <hr>
 
     <h2 class="mb-3">Danh sách phiếu chờ sửa</h2>
@@ -34,7 +34,7 @@
         </tr>
         </thead>
         <tbody>
-        {% for ptn in phieu_cho_sua %}
+        {% for ptn in phieu_cho_sua.items %}
         <tr>
             <td>{{ ptn.id }}</td>
             <td>{{ ptn.ngay_tiep_nhan.strftime('%d-%m-%Y') }}</td>
@@ -62,6 +62,31 @@
         {% endfor %}
         </tbody>
     </table>
+    <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if not phieu_cho_sua.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('suachua_dashboard', page_phieuchosua=phieu_cho_sua.prev_num) }}">
+                        &laquo; Trước
+                    </a>
+                </li>
+
+                {% for page_num in phieu_cho_sua.iter_pages() %}
+                {% if page_num %}
+                <li class="page-item {% if page_num == phieu_cho_sua.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('suachua_dashboard', page_phieuchosua=page_num) }}">{{ page_num }}</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% endif %}
+                {% endfor %}
+
+                <li class="page-item {% if not phieu_cho_sua.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('suachua_dashboard', page_phieuchosua=phieu_cho_sua.next_num) }}">
+                        Tiếp &raquo;
+                    </a>
+                </li>
+            </ul>
+    </nav>
     <div class="mt-5">
         <h2 class="mb-3 text-secondary border-top pt-3">Danh sách phiếu đang sửa / đã sửa</h2>
 

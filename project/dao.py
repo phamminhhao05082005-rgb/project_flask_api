@@ -339,6 +339,12 @@ def delete_chitiet_psc(ctsc_id):
     db.session.commit()
 
     return True, "Da xoa ctsc thanh cong"
-
+def get_ptn_cho_psc(page=1, per_page=5):
+    return PhieuTiepNhan.query.options(
+        joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
+        joinedload(PhieuTiepNhan.lois)
+    ).filter(
+        ~PhieuTiepNhan.phieu_sua_chuas.any()
+    ).order_by(PhieuTiepNhan.ngay_tiep_nhan.desc()).paginate(page=page, per_page=per_page)
 
 
