@@ -16,6 +16,27 @@
 
     <hr>
 
+    <!--filter form-->
+    <form class="row g-3 mb-4">
+        <div class="col-md-4">
+            <input type="text" class="form-control" name="kw" placeholder="Nhập biển số xe..."
+                   value="{{ request.args.get('kw', '') }}">
+        </div>
+        <div class="col-md-3">
+            <input type="date" class="form-control" name="ngay" value="{{ request.args.get('ngay', '') }}">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-info w-100 text-white">
+                <i class="bi bi-search"></i> Tìm kiếm
+            </button>
+        </div>
+        <div class="col-md-2">
+            <a href="{{ url_for('tiepnhan_dashboard') }}" class="btn btn-secondary w-100">
+                <i class="bi bi-arrow-counterclockwise"></i> Reset
+            </a>
+        </div>
+    </form>
+
     <div id="collapseDanhSach">
         <h2 class="mt-3">Danh sách phiếu đã tiếp nhận</h2>
 
@@ -68,6 +89,10 @@
                                     <li>(Không có lỗi cụ thể được chọn)</li>
                                     {% endfor %}
                                 </ul>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Mô tả / Ghi chú:</strong>
+                                <span class="text-muted fst-italic">{{ ptn.description if ptn.description else 'Không có mô tả' }}</span>
                             </li>
                         </ul>
                         <hr>

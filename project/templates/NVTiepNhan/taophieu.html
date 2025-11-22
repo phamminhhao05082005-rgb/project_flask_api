@@ -6,66 +6,94 @@
         {{ 'Cập nhật Phiếu Tiếp Nhận' if ptn else 'Lập Phiếu Tiếp Nhận Mới' }}
     </h1>
 {% include 'layout/flash_messages.html' %}
-    <form id="phieuForm" method="POST" action="{{ url_for('tiepnhan_edit', id=ptn.id) if ptn else url_for('tiepnhan_taophieu') }}">
+    <form id="phieuForm"
+          method="POST"
+          action="{{ url_for('tiepnhan_edit', id=ptn.id) if ptn else url_for('tiepnhan_taophieu') }}">
 
+        <!-- ==================== 1. Thông tin xe ==================== -->
+        <fieldset class="border p-3 mb-3 bg-light">
+            <legend class="w-auto px-2 text-primary fw-bold">1. Thông tin Xe (Nhập Biển số trước)</legend>
+
+            <!-- Biển số -->
+            <div class="mb-3">
+                <label for="xe_bien_so" class="form-label">Biển số xe <span class="text-danger">*</span></label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="xe_bien_so" name="xe_bien_so"
+                           value="{{ ptn.xe.bien_so if ptn else '' }}"
+                           {{ 'disabled' if ptn else 'required' }}
+                           onblur="checkBienSo()">
+                    <span class="input-group-text" id="bienso-status">
+                        <i class="bi bi-search"></i>
+                    </span>
+                </div>
+                <small id="bienso-feedback" class="form-text text-muted"></small>
+            </div>
+
+            <!-- Loại xe -->
+            <div class="mb-3">
+                <label for="xe_loai_xe" class="form-label">Loại xe</label>
+                <select class="form-select" id="xe_loai_xe" name="xe_loai_xe"
+                        {{ 'disabled' if ptn else 'required' }}>
+                    <option value="" disabled selected>-- Chọn loại xe --</option>
+                    {% for lx in loai_xes %}
+                        <option value="{{ lx.name }}"
+                            {{ 'selected' if ptn and ptn.xe.loai_xe.name == lx.name else '' }}>
+                            {{ lx.value }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </fieldset>
+
+        <!-- ==================== 2. Khách hàng ==================== -->
         <fieldset class="border p-3 mb-3">
-            <legend class="w-auto px-2">1. Thông tin khách hàng</legend>
+            <legend class="w-auto px-2">2. Thông tin Khách hàng</legend>
+
             <div class="mb-3">
                 <label for="customer_name" class="form-label">Họ tên khách hàng</label>
                 <input type="text" class="form-control" id="customer_name" name="customer_name"
                        value="{{ ptn.xe.khachhang.name if ptn else '' }}"
                        {{ 'disabled' if ptn else 'required' }}>
             </div>
+
             <div class="mb-3">
                 <label for="customer_sdt" class="form-label">Số điện thoại</label>
                 <input type="tel" class="form-control" id="customer_sdt" name="customer_sdt"
-                       pattern="[0-9]{1,10}" inputmode="numeric"
-                       maxlength="10"
+                       pattern="[0-9]{1,10}" inputmode="numeric" maxlength="10"
                        value="{{ ptn.xe.khachhang.sdt if ptn else '' }}"
                        {{ 'disabled' if ptn else 'required' }}>
             </div>
         </fieldset>
 
+        <!-- ==================== 3. Thông tin lỗi ==================== -->
         <fieldset class="border p-3 mb-3">
-            <legend class="w-auto px-2">2. Thông tin xe</legend>
-            <div class="mb-3">
-                <label for="xe_bien_so" class="form-label">Biển số xe</label>
-                <input type="text" class="form-control" id="xe_bien_so" name="xe_bien_so"
-                       value="{{ ptn.xe.bien_so if ptn else '' }}"
-                       {{ 'disabled' if ptn else 'required' }}>
-            </div>
-            <div class="mb-3">
-                <label for="xe_loai_xe" class="form-label">Loại xe</label>
-                <select class="form-select" id="xe_loai_xe" name="xe_loai_xe"
-                        {{ 'disabled' if ptn else 'required' }}>
-                <option value="" disabled selected>-- Chọn loại xe --</option>
-                {% for lx in loai_xes %}
-                <option value="{{ lx.name }}"
-                        {{ 'selected' if ptn and ptn.xe.loai_xe.name == lx.name else '' }}>
-                {{ lx.value }}
-                </option>
-                {% endfor %}
-                </select>
-            </div>
-        </fieldset>
+            <legend class="w-auto px-2">3. Thông tin lỗi & mô tả</legend>
 
-        <fieldset class="border p-3 mb-3">
-            <legend class="w-auto px-2">3. Thông tin lỗi (Được phép sửa)</legend>
-            <div class="mb-3" id="loiGroup">
+            <!-- Các lỗi -->
+            <div class="mb-3">
                 <label class="form-label">Các lỗi ghi nhận:</label>
                 {% for loi in lois %}
                 <div class="form-check">
-                    <input class="form-check-input loi-checkbox" type="checkbox" name="loi_ids" value="{{ loi.id }}"
+                    <input class="form-check-input loi-checkbox"
+                           type="checkbox" name="loi_ids" value="{{ loi.id }}"
                            id="loi-{{ loi.id }}"
                            {% if ptn and loi in ptn.lois %}checked{% endif %}>
+
                     <label class="form-check-label" for="loi-{{ loi.id }}">
                         {{ loi.ten_loi }}
                     </label>
                 </div>
                 {% endfor %}
             </div>
+
+            <!-- Mô tả -->
+            <div class="mb-3">
+                <label for="description" class="form-label">Mô tả</label>
+                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+            </div>
         </fieldset>
 
+        <!-- Nút -->
         <div class="text-center">
             <button type="submit" class="btn btn-success btn-lg">
                 {{ 'Cập nhật Phiếu' if ptn else 'Lưu Phiếu' }}
@@ -75,27 +103,85 @@
     </form>
 </section>
 
+<!-- ==================== SCRIPT ==================== -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const sdtInput = document.getElementById('customer_sdt');
-    const form = document.getElementById('phieuForm');
+    // ---- Check biển số gọi API ----
+    function checkBienSo() {
+        let bienSoInput = document.getElementById('xe_bien_so');
+        let bienSo = bienSoInput.value.trim();
 
-    // Chặn nhập ký tự không phải số và tối đa 10 ký tự
-    sdtInput.addEventListener('input', function() {
-        this.value = this.value.replace(/\D/g, '');
-        if (this.value.length > 10) this.value = this.value.slice(0, 10);
-    });
-    // Validate checkbox lỗi trước khi submit
-    form.addEventListener('submit', function(e) {
-        const checkboxes = document.querySelectorAll('.loi-checkbox');
-        const checked = Array.from(checkboxes).some(cb => cb.checked);
+        let loaiXeSelect = document.getElementById('xe_loai_xe');
+        let nameInput = document.getElementById('customer_name');
+        let sdtInput = document.getElementById('customer_sdt');
 
-        if (!checked) {
-            e.preventDefault(); // chặn submit
-            alert("Bạn phải chọn ít nhất 1 lỗi!");
-            // Form giữ nguyên dữ liệu người dùng đã nhập
-        }
+        let statusIcon = document.getElementById('bienso-status');
+        let feedback = document.getElementById('bienso-feedback');
+
+        if (bienSoInput.disabled || !bienSo) return;
+
+        fetch('/request/kiem_tra_bien_so', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({bien_so: bienSo})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.found) {
+                loaiXeSelect.value = data.loai_xe;
+                nameInput.value = data.kh_name;
+                sdtInput.value = data.kh_sdt;
+
+                loaiXeSelect.classList.add("bg-light");
+
+                nameInput.readOnly = true;
+                sdtInput.readOnly = true;
+
+                statusIcon.innerHTML =
+                    '<i class="bi bi-check-circle-fill text-success"></i>';
+                feedback.innerText = data.message;
+                feedback.className = "form-text text-success fw-bold";
+
+            } else {
+                nameInput.value = '';
+                sdtInput.value = '';
+                loaiXeSelect.value = '';
+
+                nameInput.readOnly = false;
+                sdtInput.readOnly = false;
+                loaiXeSelect.classList.remove("bg-light");
+
+                statusIcon.innerHTML =
+                    '<i class="bi bi-plus-circle-fill text-primary"></i>';
+                feedback.innerText = "Xe mới (Chưa có trong hệ thống)";
+                feedback.className = "form-text text-primary";
+            }
+        })
+        .catch(error => console.error(error));
+    }
+
+    // ---- Validate SDT + số lượng lỗi ----
+    document.addEventListener('DOMContentLoaded', function() {
+        const sdtInput = document.getElementById('customer_sdt');
+        const form = document.getElementById('phieuForm');
+
+        // Chỉ cho nhập số, giới hạn 10 ký tự
+        sdtInput.addEventListener('input', function() {
+            this.value = this.value.replace(/\D/g, '');
+            if (this.value.length > 10)
+                this.value = this.value.slice(0, 10);
+        });
+
+        // Kiểm tra ít nhất 1 lỗi
+        form.addEventListener('submit', function(e) {
+            const checkboxes = document.querySelectorAll('.loi-checkbox');
+            const checked = Array.from(checkboxes).some(cb => cb.checked);
+
+            if (!checked) {
+                e.preventDefault();
+                alert("Bạn phải chọn ít nhất 1 lỗi!");
+            }
+        });
     });
-});
 </script>
+
 {% endblock %}

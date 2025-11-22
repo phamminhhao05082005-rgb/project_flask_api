@@ -18,7 +18,6 @@ def get_user_by_id(id):
     return NhanVienBase.query.get(id)
 
 # cac ham thao tac voi linh kien
-
 def get_linhkien_paginate(page=1, per_page=5, hangmuc_id=None, keyword=None):
     query = LinhKien.query
 
@@ -28,14 +27,19 @@ def get_linhkien_paginate(page=1, per_page=5, hangmuc_id=None, keyword=None):
     if keyword:
         query = query.filter(LinhKien.ten_linh_kien.contains(keyword))
 
-    return query.order_by(LinhKien.id.asc()).paginate(page=page, per_page=per_page)
 
+    return query.order_by(LinhKien.id.asc()).paginate(page=page, per_page=per_page)
 def get_linhkien_by_id(id):
     return LinhKien.query.get(id)
-
 def create_linhkien(ten, gia, tien_cong, hangmuc_id, quanly_id):
+    if not is_name_unique(LinhKien, ten, field_name='ten_linh_kien'):
+        query = LinhKien.query.filter_by(ten_linh_kien=ten.strip(), hangmuc_id=hangmuc_id)
+        if query.first():
+            hangMuc = get_hangmuc_by_id(hangmuc_id)
+            return False, f"Linh kiện '{ten}' đã tồn tại trong hạng mục '{hangMuc.ten_hang_muc}'!"
+
     lk = LinhKien(
-        ten_linh_kien=ten,
+        ten_linh_kien=ten.strip(),
         gia=gia,
         tien_cong=tien_cong,
         hangmuc_id=hangmuc_id,
@@ -43,22 +47,59 @@ def create_linhkien(ten, gia, tien_cong, hangmuc_id, quanly_id):
     )
     db.session.add(lk)
     db.session.commit()
-
+    return True, "Tạo linh kiện thành công!"
 def update_linhkien(id, ten, gia, tien_cong, hangmuc_id):
     lk = get_linhkien_by_id(id)
-    if lk:
-        lk.ten_linh_kien = ten
-        lk.gia = gia
-        lk.tien_cong = tien_cong
-        lk.hangmuc_id = hangmuc_id
-        db.session.commit()
+    if not lk:
+        return False, "Linh kiện không tồn tại"
 
+    if not is_name_unique(LinhKien, ten, exclude_id=id, extra_filter={'hangmuc_id': hangmuc_id}):
+        hangMuc = get_hangmuc_by_id(hangmuc_id)
+        return False, f"Linh kiện '{ten}' đã tồn tại trong hạng mục '{hangMuc.ten_hang_muc}'!"
+
+    lk.ten_linh_kien = ten.strip()
+    lk.gia = gia
+    lk.tien_cong = tien_cong
+    lk.hangmuc_id = hangmuc_id
+    db.session.commit()
+    return True, "Cập nhật linh kiện thành công"
 
 def delete_linhkien(id):
     lk = get_linhkien_by_id(id)
     if not lk:
         return False
     db.session.delete(lk)
+    db.session.commit()
+    return True
+def get_all_linh_kien():
+    return LinhKien.query.all()
+def get_all_hangmuc():
+    return HangMuc.query.all()
+
+# cac ham thao tac voi quy dinh
+from models import QuyDinh
+def get_quydinh_paginate(page=1, per_page=5):
+    return QuyDinh.query.paginate(page=page, per_page=per_page)
+def get_quydinh_by_id(id):
+    return QuyDinh.query.get(id)
+def create_quydinh(ten_quy_dinh, noi_dung, quanly_id):
+    qd = QuyDinh(ten_quy_dinh=ten_quy_dinh, noi_dung=noi_dung, quanly_id=quanly_id)
+    db.session.add(qd)
+    db.session.commit()
+    return qd
+def update_quydinh(id, ten_quy_dinh, noi_dung):
+    qd = get_quydinh_by_id(id)
+    if not qd:
+        return None
+    qd.ten_quy_dinh = ten_quy_dinh
+    qd.noi_dung = noi_dung
+    db.session.commit()
+    return qd
+def delete_quydinh(id):
+    qd = get_quydinh_by_id(id)
+    if not qd:
+        return False
+    db.session.delete(qd)
     db.session.commit()
     return True
 
@@ -73,40 +114,12 @@ def get_quydinh_paginate(page=1, per_page=5, keyword=None):
         query = query.filter(QuyDinh.ten_quy_dinh.contains(keyword))
     return query.order_by(QuyDinh.id.asc()).paginate(page=page, per_page=per_page)
 
-def get_quydinh_by_id(id):
-    return QuyDinh.query.get(id)
-
-def create_quydinh(ten_quy_dinh, noi_dung, quanly_id):
-    qd = QuyDinh(ten_quy_dinh=ten_quy_dinh, noi_dung=noi_dung, quanly_id=quanly_id)
-    db.session.add(qd)
-    db.session.commit()
-    return qd
-
-def update_quydinh(id, ten_quy_dinh, noi_dung):
-    qd = get_quydinh_by_id(id)
-    if not qd:
-        return None
-    qd.ten_quy_dinh = ten_quy_dinh
-    qd.noi_dung = noi_dung
-    db.session.commit()
-    return qd
-
-def delete_quydinh(id):
-    qd = get_quydinh_by_id(id)
-    if not qd:
-        return False
-    db.session.delete(qd)
-    db.session.commit()
-    return True
 
 #  cac thao tac voi hang muc
-
 def get_all_hangmuc():
     return HangMuc.query.all()
-
 def get_hangmuc_by_id(id):
     return HangMuc.query.get(id)
-
 def create_hangmuc(ten, quanly_id, mo_ta=None):
     hm = HangMuc(
         ten_hang_muc=ten,
@@ -115,79 +128,64 @@ def create_hangmuc(ten, quanly_id, mo_ta=None):
     )
     db.session.add(hm)
     db.session.commit()
-
 def update_hangmuc(id, ten):
     hm = get_hangmuc_by_id(id)
     if hm:
         hm.ten_hang_muc = ten
         db.session.commit()
-
 def delete_hangmuc(id):
     hm = get_hangmuc_by_id(id)
     if hm:
         if hm.linh_kiens:
-            return False, "Hạng mục này vẫn còn linh kiện, không thể xóa!"
+            return False, "Danh mục này vẫn còn linh kiện, không thể xóa!"
         db.session.delete(hm)
         db.session.commit()
         return True, "Xóa hạng mục thành công!"
-
 def get_hangmuc_paginate(page=1, per_page=5, keyword=None):
     query = HangMuc.query
     if keyword:
         query = query.filter(HangMuc.ten_hang_muc.contains(keyword))
     return query.order_by(HangMuc.id.asc()).paginate(page=page, per_page=per_page)
 
-def is_name_unique(model_class, name, exclude_id=None, field_name=None):
+def get_hangmuc_by_id(hangmuc_id):
+    return HangMuc.query.get(hangmuc_id)
 
+def is_name_unique(model_class, name, exclude_id=None, field_name=None, extra_filter=None):
     if field_name is None:
         if model_class.__name__ == "LinhKien":
             field_name = 'ten_linh_kien'
         elif model_class.__name__ == "HangMuc":
             field_name = 'ten_hang_muc'
-        elif model_class.__name__ == "QuyDinh":
-            field_name = 'ten_quy_dinh'
         else:
             field_name = 'ten'
 
     query = model_class.query.filter(getattr(model_class, field_name) == name.strip())
+
     if exclude_id:
         query = query.filter(model_class.id != exclude_id)
+
+    # Thêm điều kiện bổ sung
+    if extra_filter:
+        for k, v in extra_filter.items():
+            query = query.filter(getattr(model_class, k) == v)
+
     return query.first() is None
 
+
+# cac ham thao tac voi loi
 def get_all_loi():
     return Loi.query.all()
 def get_loi_by_id(id):
     return Loi.query.get(id)
 def get_loi_by_name(name):
     return Loi.query.filter_by(ten_loi=name).first()
-def create_loi(ten_loi):
-    if get_loi_by_name(ten_loi):
-        return flash('Loi da ton tai', 'danger')
 
-    loi = Loi(ten_loi=ten_loi)
-    db.session.add(loi)
-    db.session.commit()
-def update_loi(id, ten_loi):
-    loi = get_loi_by_id(id)
-    if loi:
-        loi.ten_loi = ten_loi
-        db.session.commit()
-def delete_loi(id):
-    loi = get_loi_by_id(id)
-    if loi:
-        if loi.phieu_tiep_nhans:
-            return False, "Loi nam trong phieu tiep nhan, ko the xoa!"
-
-        db.session.delete(loi)
-        db.session.commit()
-        return True, "Xoa thanh cong!"
-    return False, "Khong tim thay loi."
 def get_loi_paginate(page=1, per_page=5):
     return Loi.query.order_by(Loi.id.asc()).paginate(page=page, per_page=per_page)
 
 # cac thao tac voi xe
 def get_xe_by_bien_so(bien_so):
-    return Xe.query.filter_by(bien_so=bien_so).first()
+    return Xe.query.options(joinedload(Xe.khachhang)).filter_by(bien_so=bien_so).first()
 
 # cac ham thao tac voi phieu tiep nhan
 def create_phieu_tiep_nhan(data, nvtn_id):
@@ -212,7 +210,8 @@ def create_phieu_tiep_nhan(data, nvtn_id):
         # tao phieu tiep nhan
         ptn = PhieuTiepNhan(
             nvtn_id=nvtn_id,
-            xe_id=xe.id
+            xe_id=xe.id,
+            description = data.get('description')
         )
         db.session.add(ptn)
         db.session.flush()  # lay san id cua ptn
@@ -226,8 +225,15 @@ def create_phieu_tiep_nhan(data, nvtn_id):
             db.session.add(ptn_loi)
 
     db.session.commit()
-def get_all_phieu_tiep_nhan(page=1, per_page=5):
-    return PhieuTiepNhan.query.options(
+def get_all_phieu_tiep_nhan(page=1, per_page=5, kw=None, ngay=None):
+    query = PhieuTiepNhan.query
+
+    if kw:
+        query = query.join(Xe).filter(Xe.bien_so.contains(kw))
+    if ngay:
+        query = query.filter(PhieuTiepNhan.ngay_tiep_nhan==ngay)
+
+    return query.options(
         joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
         joinedload(PhieuTiepNhan.nhan_vien_tiep_nhan),
         joinedload(PhieuTiepNhan.lois)
@@ -237,11 +243,14 @@ def get_phieu_tiep_nhan_by_id(id):
         joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
         joinedload(PhieuTiepNhan.lois)
     ).get(id)
-def update_phieu_tiep_nhan(id, new_loi_ids):
+def update_phieu_tiep_nhan(id, new_loi_ids, description=None):
     ptn = get_phieu_tiep_nhan_by_id(id)
     if not ptn:
         return None
-    # xoa loi cu
+
+    if description is not None:
+        ptn.description = description
+
     ptn.lois.clear()
     for loi_id in new_loi_ids:
         loi = get_loi_by_id(loi_id)
@@ -268,13 +277,22 @@ def delete_phieu_tiep_nhan(id):
 
 # cac ham thao tac voi phieu sua chua
 
-def get_ptn_cho_psc():
-    return PhieuTiepNhan.query.options(
+def get_ptn_cho_psc(page=1, per_page=5, kw=None, ngay=None):
+    query = PhieuTiepNhan.query.filter(
+        ~PhieuTiepNhan.phieu_sua_chuas.any()
+    )
+
+    if kw:
+        query = query.join(PhieuTiepNhan.xe).filter(Xe.bien_so.contains(kw))
+
+    if ngay:
+        query = query.filter(PhieuTiepNhan.ngay_tiep_nhan == ngay)
+
+    return query.options(
         joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
         joinedload(PhieuTiepNhan.lois)
-    ).filter(
-        ~PhieuTiepNhan.phieu_sua_chuas.any()
-    ).order_by(PhieuTiepNhan.ngay_tiep_nhan.desc()).all()
+    ).order_by(PhieuTiepNhan.ngay_tiep_nhan.desc()).paginate(page=page, per_page=per_page)
+
 def create_psc(ptn_id, nvsc_id):
     ton_tai_psc = PhieuSuaChua.query.filter_by(ptn_id=ptn_id).first()
     if ton_tai_psc:
@@ -312,12 +330,18 @@ def add_lk_to_psc(psc_id, linh_kien_id, so_luong):
 
     db.session.commit()
     return True, "Them linh kien thanh cong"
-def get_all_psc(page=1, per_page=5):
-    return PhieuSuaChua.query.options(
+def get_all_psc(page=1, per_page=5, kw=None, ngay=None):
+    query = PhieuSuaChua.query
+
+    if kw:
+        query = query.join(PhieuSuaChua.phieu_tiep_nhan).join(PhieuTiepNhan.xe).filter(Xe.bien_so.contains(kw))
+    if ngay:
+        query = query.filter(PhieuSuaChua.ngay_sua_chua==ngay)
+
+    return query.options(
         joinedload(PhieuSuaChua.phieu_tiep_nhan).joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
         joinedload(PhieuSuaChua.nhan_vien_sua_chua)
     ).order_by(PhieuSuaChua.id.desc()).paginate(page=page, per_page=per_page)
-
 def delete_psc(psc_id):
     psc = PhieuSuaChua.query.get(psc_id)
     if psc:
@@ -339,12 +363,7 @@ def delete_chitiet_psc(ctsc_id):
     db.session.commit()
 
     return True, "Da xoa ctsc thanh cong"
-def get_ptn_cho_psc(page=1, per_page=5):
-    return PhieuTiepNhan.query.options(
-        joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
-        joinedload(PhieuTiepNhan.lois)
-    ).filter(
-        ~PhieuTiepNhan.phieu_sua_chuas.any()
-    ).order_by(PhieuTiepNhan.ngay_tiep_nhan.desc()).paginate(page=page, per_page=per_page)
 
-
+# cac ham thao tac voi khach hang
+def get_kh_by_sdt(sdt):
+    return KhachHang.query.filter_by(sdt=sdt).first()

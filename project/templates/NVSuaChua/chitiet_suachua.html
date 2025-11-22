@@ -36,9 +36,11 @@
                         {% endfor %}
                     </ul>
                 </li>
+                <li class="list-group-item"><strong>Mo ta: </strong>{{ psc.phieu_tiep_nhan.description }}</li>
             </ul>
         </div>
     </div>
+
     <div class="card">
         <div class="card-header">
             <strong>Chi tiết linh kiện/dịch vụ (Do: {{ psc.nhan_vien_sua_chua.name }})</strong>
@@ -70,6 +72,17 @@
                     </div>
                 </div>
             </form>
+
+            <script>
+                $(document).ready(function() {
+                    // Áp dụng Select2 cho thẻ có id="linh_kien_id"
+                    $('#linh_kien_id').select2({
+                        placeholder: "-- Tìm kiếm linh kiện --",
+                        allowClear: true,
+                        width: '100%'
+                    });
+                });
+            </script>
 
             <table class="table">
                 <thead>

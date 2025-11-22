@@ -1,9 +1,8 @@
-from flask import render_template, request, redirect, url_for, flash, abort
+from flask import render_template, request, redirect, url_for, flash, abort, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from init import app, login
 from project import dao
-from models import RoleEnum, LinhKien, HangMuc, LoaiXe, ChiTietSuaChua
-import math
+from models import RoleEnum, LoaiXe, ChiTietSuaChua, HangMuc, LoaiXe, ChiTietSuaChua
 
 
 @app.route('/login')
@@ -21,26 +20,29 @@ def login_process():
     username = request.form.get('username')
     password = request.form.get('password')
 
-    if not username or not password:
-        flash("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu", "warning")
-        return render_template('login.html')
-
     u = dao.auth_user(username=username, password=password)
+    if u:
+        login_user(u)
 
-    if not u:
-        flash("Tên đăng nhập hoặc mật khẩu không đúng", "danger")
-        return render_template('login.html')
+        if u.role == RoleEnum.TIEPNHAN:
+            return redirect(url_for('tiepnhan_dashboard'))
+        elif u.role == RoleEnum.SUACHUA:
+            return redirect(url_for('suachua_dashboard'))
+        elif u.role == RoleEnum.THUNGAN:
+            return redirect(url_for('thungan_dashboard'))
+        elif u.role == RoleEnum.QUANLY:
+            return redirect(url_for('quanly_dashboard'))
+        else:
+            return render_template('login.html')
+    else:
+        return render_template('login.html', error="Tên đăng nhập hoặc mật khẩu không đúng")
 
-    login_user(u)
 
-    redirect_map = {
-        RoleEnum.TIEPNHAN: 'tiepnhan_dashboard',
-        RoleEnum.SUACHUA: 'suachua_dashboard',
-        RoleEnum.THUNGAN: 'thungan_dashboard',
-        RoleEnum.QUANLY: 'quanly_dashboard'
-    }
-
-    return redirect(url_for(redirect_map.get(u.role, 'login')))
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return render_template('login.html')
 
 
 @app.route('/tiepnhan')
@@ -50,8 +52,11 @@ def tiepnhan_dashboard():
     if check:
         return check
 
+    kw = request.args.get('kw')
+    ngay = request.args.get('ngay')
+
     page = request.args.get('page', 1, type=int)
-    danh_sach_ptn = dao.get_all_phieu_tiep_nhan(page=page, per_page=5)
+    danh_sach_ptn = dao.get_all_phieu_tiep_nhan(page=page, per_page=5, kw=kw, ngay=ngay)
 
     return render_template(
         'NVTiepNhan/tiepnhan.html',
@@ -67,22 +72,14 @@ def tiepnhan_taophieu():
         return check
 
     if request.method == 'POST':
-        loi_ids = request.form.getlist('loi_ids')  # danh sách lỗi đã tick
-
-        # Bắt buộc phải chọn ít nhất 1 lỗi
-        if not loi_ids:
-            flash("Bạn phải chọn ít nhất 1 lỗi!", "danger")
-            return redirect(url_for('tiepnhan_taophieu'))
-
         data = {
             "customer_name": request.form.get('customer_name'),
             "customer_sdt": request.form.get('customer_sdt'),
             "xe_bien_so": request.form.get('xe_bien_so'),
             "xe_loai_xe": request.form.get('xe_loai_xe'),
-            "loi_ids": loi_ids,
+            "loi_ids": request.form.getlist('loi_ids'),
             "description": request.form.get('description')
         }
-
         try:
             dao.create_phieu_tiep_nhan(data=data, nvtn_id=current_user.id)
             flash("Tạo phiếu tiếp nhận thành công!", "success")
@@ -106,8 +103,9 @@ def tiepnhan_edit(id):
 
     if request.method == 'POST':
         new_loi_ids = request.form.getlist('loi_ids')
+        description = request.form.get('description')
         try:
-            dao.update_phieu_tiep_nhan(id, new_loi_ids)
+            dao.update_phieu_tiep_nhan(id, new_loi_ids, description)
             flash("Cập nhật phiếu thành công!", "success")
             return redirect(url_for('tiepnhan_dashboard'))
         except Exception as e:
@@ -145,6 +143,26 @@ def tiepnhan_delete(id):
     return redirect(url_for('tiepnhan_dashboard'))
 
 
+@app.route('/request/kiem_tra_bien_so', methods=['POST'])
+@login_required
+def kiem_tra_bien_so():
+    data = request.get_json()
+    bien_so = data.get('bien_so')
+
+    if not bien_so:
+        return jsonify({'found': False})
+
+    xe = dao.get_xe_by_bien_so(bien_so)
+    if xe:
+        return jsonify({'found': True,
+                        'loai_xe': xe.loai_xe.name,
+                        'kh_name': xe.khachhang.name,
+                        'kh_sdt': xe.khachhang.sdt,
+                        'message': 'Da tim thay thong tin xe co san trong db'
+                        })
+    return jsonify({'found': False})
+
+
 @app.route('/suachua')
 @login_required
 def suachua_dashboard():
@@ -152,13 +170,15 @@ def suachua_dashboard():
     if check:
         return check
 
+    kw = request.args.get('kw')  # keyword lọc theo biển số xe
+    ngay = request.args.get('ngay')  # ngày lọc
     page_phieuchosua = request.args.get('page_phieuchosua', 1, type=int)
-    phieu_cho_sua = dao.get_ptn_cho_psc(page=page_phieuchosua, per_page=5)
+    phieu_cho_sua = dao.get_ptn_cho_psc(page=page_phieuchosua, per_page=5, kw=kw, ngay=ngay)
 
     page = request.args.get('page', 1, type=int)
-    pscs = dao.get_all_psc(page=page, per_page=5)
+    pscs = dao.get_all_psc(page=page, per_page=5, kw=kw, ngay=ngay)
 
-    return render_template('NVSuaChua/suachua.html', phieu_cho_sua=phieu_cho_sua, pscs=pscs)
+    return render_template('NVSuaChua/suachua.html', phieu_cho_sua=phieu_cho_sua, pscs=pscs, kw=kw, ngay=ngay)
 
 
 @app.route('/suachua/nhan-phieu/<int:ptn_id>', methods=['POST'])
@@ -256,13 +276,6 @@ def quanly_dashboard():
     return render_template('quanly/base_quanly.html')
 
 
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return render_template('login.html')
-
-
 @app.route('/quanly/linhkien')
 @login_required
 def quanly_linhkien():
@@ -299,15 +312,12 @@ def quanly_linhkien_create():
         tien_cong = float(request.form['tien_cong'])
         hangmuc_id = int(request.form['hangmuc'])
 
-        dao.create_linhkien(
-            ten=ten,
-            gia=gia,
-            tien_cong=tien_cong,
-            hangmuc_id=hangmuc_id,
-            quanly_id=current_user.id
-        )
-        flash("Tạo linh kiện thành công!", "success")
-        return redirect(url_for('quanly_linhkien'))
+        ok, message = dao.create_linhkien(ten, gia, tien_cong, hangmuc_id, current_user.id)
+        flash(message, "success" if ok else "danger")
+        if ok:
+            return redirect(url_for('quanly_linhkien'))
+        else:
+            return render_template('quanly/tao_or_xoa_lk.html', hangmucs=hangmucs, linhkien=None)
 
     return render_template('quanly/tao_or_xoa_lk.html', hangmucs=hangmucs, linhkien=None)
 
@@ -323,8 +333,7 @@ def quanly_linhkien_create_multi():
 
     if request.method == 'POST':
         same_category = request.form.get('same_category') == '1'
-
-        common_hangmuc = request.form.get('common_hangmuc') if same_category else None
+        common_hangmuc = int(request.form.get('common_hangmuc')) if same_category else None
 
         ten_list = request.form.getlist('ten[]')
         gia_list = request.form.getlist('gia[]')
@@ -344,16 +353,20 @@ def quanly_linhkien_create_multi():
             except:
                 continue
 
-            hangmuc_id = common_hangmuc if same_category else hangmuc_list[idx]
+            hangmuc_id = common_hangmuc if same_category else int(hangmuc_list[idx])
 
-            dao.create_linhkien(
+            ok, message = dao.create_linhkien(
                 ten=ten,
                 gia=gia,
                 tien_cong=tien_cong,
                 hangmuc_id=hangmuc_id,
                 quanly_id=current_user.id
             )
-            created_count += 1
+
+            if ok:
+                created_count += 1
+            else:
+                flash(message, "warning")  # flash từng linh kiện trùng
 
         if created_count == 0:
             flash("Chưa có linh kiện nào hợp lệ để tạo!", "warning")
@@ -375,33 +388,16 @@ def quanly_linhkien_edit(id):
     lk = dao.get_linhkien_by_id(id)
     hangmucs = dao.get_all_hangmuc()
     if request.method == 'POST':
-        ten = request.form['ten'].strip()
-        try:
-            gia = float(request.form['gia'])
-            tien_cong = float(request.form['tien_cong'])
-            hangmuc_id = int(request.form['hangmuc'])
-        except ValueError:
-            flash("Dữ liệu không hợp lệ!", "danger")
-            return render_template('quanly/tao_or_xoa_lk.html', hangmucs=hangmucs, linhkien=lk)
-
-        if gia <= 0:
-            flash("Giá linh kiện phải lớn hơn 0!", "danger")
-        elif tien_cong < 0:
-            flash("Tiền công không được âm!", "danger")
-        elif not dao.is_name_unique(LinhKien, ten, exclude_id=id, field_name='ten_linh_kien'):
-            flash("Tên linh kiện đã tồn tại!", "danger")
-        else:
-            dao.update_linhkien(
-                id=id,
-                ten=ten,
-                gia=gia,
-                tien_cong=tien_cong,
-                hangmuc_id=hangmuc_id
-            )
-            flash("Cập nhật linh kiện thành công!", "success")
+        success, msg = dao.update_linhkien(
+            id=id,
+            ten=request.form['ten'],
+            gia=float(request.form['gia']),
+            tien_cong=float(request.form['tien_cong']),
+            hangmuc_id=int(request.form['hangmuc'])
+        )
+        flash(msg, "success" if success else "warning")
+        if success:
             return redirect(url_for('quanly_linhkien'))
-
-        return render_template('quanly/tao_or_xoa_lk.html', hangmucs=hangmucs, linhkien=lk)
 
     return render_template('quanly/tao_or_xoa_lk.html', hangmucs=hangmucs, linhkien=lk)
 
@@ -569,16 +565,18 @@ def quanly_hangmuc_edit(id):
 
     hm = dao.get_hangmuc_by_id(id)
     if request.method == 'POST':
-        ten = request.form['ten'].strip()
-        if not dao.is_name_unique(HangMuc, ten, exclude_id=id, field_name='ten_hang_muc'):
+        ten_moi = request.form['ten'].strip()
+
+        if not dao.is_name_unique(HangMuc, ten_moi, exclude_id=id, field_name='ten_hang_muc'):
             flash("Tên hạng mục đã tồn tại!", "danger")
             return render_template('quanly/tao_or_sua_hm.html', hangmuc=hm)
 
-        dao.update_hangmuc(id, ten=ten)
+        dao.update_hangmuc(id, ten_moi)
         flash("Cập nhật hạng mục thành công", "success")
         return redirect(url_for('quanly_hangmuc'))
 
     return render_template('quanly/tao_or_sua_hm.html', hangmuc=hm)
+
 
 
 @app.route('/quanly/hangmuc/delete/<int:id>', methods=['POST'])
