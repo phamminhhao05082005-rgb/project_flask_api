@@ -303,7 +303,6 @@ if __name__ == "__main__":
 
         db.session.commit()
 
-        # --- Khách hàng & Xe
         khach_hang_list = [
             ("Nguyen Van A", "0909000001"),
             ("Tran Thi B", "0909000002"),
@@ -336,7 +335,6 @@ if __name__ == "__main__":
             xe_objects.append(xe)
         db.session.commit()
 
-        # --- 10 Phiếu tiếp nhận ---
         ptn_list = []
         descriptions = [
             "Kiểm tra tổng thể", "Bảo dưỡng định kỳ", "Sửa phanh", "Thay dầu nhớt",
@@ -354,7 +352,6 @@ if __name__ == "__main__":
             ptn_list.append(ptn)
         db.session.commit()
 
-        # --- Gán lỗi cho phiếu ---
         loi_list = db.session.query(Loi).all()
         for i, ptn in enumerate(ptn_list):
             ptn.lois.append(loi_list[i % len(loi_list)])
@@ -362,14 +359,14 @@ if __name__ == "__main__":
                 ptn.lois.append(loi_list[(i + 1) % len(loi_list)])
         db.session.commit()
 
-        # --- 10 Phiếu sửa chữa ---
         psc_list = []
         for i, ptn in enumerate(ptn_list):
             psc = PhieuSuaChua(
                 ptn_id=ptn.id,
                 nvsc_id=sc.id,
                 ngay_sua_chua=date(2025, 11, 21 + i),
-                tong_tien=100000 * (i + 1)  # ví dụ tổng tiền tăng dần
+                tong_tien=100000 * (i + 1),
+                da_xac_nhan = True if i % 3 == 0 else False
             )
             db.session.add(psc)
             psc_list.append(psc)
