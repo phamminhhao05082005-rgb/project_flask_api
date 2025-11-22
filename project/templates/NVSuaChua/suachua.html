@@ -166,10 +166,13 @@
                 <td>{{ psc.nhan_vien_sua_chua.name }}</td>
                 <td>{{ "{:,.0f}".format(psc.tong_tien) }} VNĐ</td>
                 <td>
-                    <a href="{{ url_for('suachua_chi_tiet', psc_id=psc.id) }}" class="btn btn-sm btn-primary">
+                    <a href="{{ url_for('suachua_chi_tiet', psc_id=psc.id) }}"
+                       class="btn btn-sm btn-primary {% if psc.da_xac_nhan %}disabled{% endif %}"
+                       {% if psc.da_xac_nhan %}tabindex="-1" aria-disabled="true" {% endif %}>
                         Xem / Sửa
                     </a>
                 </td>
+
                 <td>
                     <form action="{{ url_for('suachua_delete', psc_id=psc.id) }}" method="POST"
                           onsubmit="return confirm('Bạn chắc chắn muốn xóa phiếu này? Phiếu tiếp nhận sẽ quay lại danh sách chờ.');">
