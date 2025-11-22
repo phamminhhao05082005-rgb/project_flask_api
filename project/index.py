@@ -2,7 +2,7 @@ from flask import render_template, request, redirect, url_for, flash, abort, jso
 from flask_login import login_user, logout_user, login_required, current_user
 from init import app, login
 from project import dao
-from models import RoleEnum, LoaiXe, ChiTietSuaChua, HangMuc, LoaiXe, ChiTietSuaChua
+from models import RoleEnum, LoaiXe, ChiTietSuaChua, HangMuc, LoaiXe, ChiTietSuaChua, PhieuSuaChua
 
 
 @app.route('/login')
@@ -256,6 +256,23 @@ def suachua_delete_item(ctsc_id):
     ok, message = dao.delete_chitiet_psc(ctsc_id)
     flash(message, "success" if ok else "danger")
     return redirect(url_for('suachua_chi_tiet', psc_id=psc_id))
+
+@app.route('/suachua/xacnhan/<int:psc_id>', methods=['POST'])
+@login_required
+def suachua_xac_nhan(psc_id):
+    # kiểm tra quyền
+    check = check_role(RoleEnum.SUACHUA)
+    if check:
+        flash("Bạn không có quyền thực hiện hành động này.", "danger")
+        return redirect(url_for('suachua_dashboard'))
+
+    psc = dao.xac_nhan(psc_id)
+    if not psc:
+        flash("Phiếu sửa chữa không tồn tại.", "danger")
+        return redirect(url_for('suachua_dashboard'))
+
+    flash(f"Phiếu #{psc.id} đã được xác nhận.", "success")
+    return redirect(url_for('suachua_dashboard'))
 
 
 @app.route('/thungan')

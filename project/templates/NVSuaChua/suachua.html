@@ -36,7 +36,7 @@
     <table class="table table-hover border">
         <thead class="table-light">
         <tr>
-            <th>Phiếu TN #</th>
+            <th>Phiếu TN</th>
             <th>Ngày nhận</th>
             <th>Biển số xe</th>
             <th>Khách hàng</th>
@@ -147,12 +147,13 @@
                 <th>Tổng tiền (Tạm tính)</th>
                 <th>Chi tiết</th>
                 <th>Delete</th>
+                <th>Xác nhận xong</th>
             </tr>
             </thead>
             <tbody>
             {% for psc in pscs.items %}
             <tr>
-                <td>#{{ psc.id }}</td>
+                <td>{{ psc.id }}</td>
                 <td>{{ psc.ngay_sua_chua }}</td>
                 <td>
                     <span class="badge bg-info text-dark">{{ psc.phieu_tiep_nhan.xe.bien_so }}</span>
@@ -172,11 +173,26 @@
                 <td>
                     <form action="{{ url_for('suachua_delete', psc_id=psc.id) }}" method="POST"
                           onsubmit="return confirm('Bạn chắc chắn muốn xóa phiếu này? Phiếu tiếp nhận sẽ quay lại danh sách chờ.');">
-                        <button type="submit" class="btn btn-sm btn-danger">
+                        <button type="submit" class="btn btn-sm btn-danger"
+                                {% if psc.da_xac_nhan %}disabled{% endif %}>
                             <i class="bi bi-x-circle"></i> Hủy
                         </button>
                     </form>
                 </td>
+
+                <td>
+                    {% if not psc.da_xac_nhan %}
+                    <form action="{{ url_for('suachua_xac_nhan', psc_id=psc.id) }}" method="POST"
+                          onsubmit="return confirm('Xác nhận phiếu này đã hoàn tất việc sửa chữa?');">
+                        <button type="submit" class="btn btn-sm btn-success">
+                            <i class="bi bi-check-circle"></i> Xác nhận
+                        </button>
+                    </form>
+                    {% else %}
+                    <span class="badge bg-success">Đã xác nhận</span>
+                    {% endif %}
+                </td>
+
             </tr>
             {% else %}
             <tr>
