@@ -7,7 +7,8 @@ from models import (
     PhieuTiepNhan, Ptn_loi, LoaiXe, QuyDinh, PhieuSuaChua, ChiTietSuaChua
 )
 from sqlalchemy.orm import joinedload
-
+from datetime import  date
+from sqlalchemy import func
 
 def auth_user(username, password):
     password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
@@ -318,6 +319,15 @@ def delete_phieu_tiep_nhan(id):
         return True
     return False
 
+def get_quy_dinh_sl_xe_nhan():
+    qd = QuyDinh.query.filter(QuyDinh.ten_quy_dinh.ilike("%sl xe nhan%")).first()
+    return int(qd.noi_dung) if qd else None
+
+def count_phieu_tiep_nhan_today():
+    today = date.today()
+    return PhieuTiepNhan.query.filter(
+        func.date(PhieuTiepNhan.ngay_tiep_nhan) == today
+    ).count()
 
 # def get_phieu_tiep_nhan_1():
 #     ptns = PhieuTiepNhan.query.all()

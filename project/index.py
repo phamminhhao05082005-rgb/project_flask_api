@@ -54,14 +54,20 @@ def tiepnhan_dashboard():
 
     kw = request.args.get('kw')
     ngay = request.args.get('ngay')
-
     page = request.args.get('page', 1, type=int)
+
     danh_sach_ptn = dao.get_all_phieu_tiep_nhan(page=page, per_page=5, kw=kw, ngay=ngay)
+
+    tong_so_ptn = dao.count_phieu_tiep_nhan_today()
+    max_sl = dao.get_quy_dinh_sl_xe_nhan()
 
     return render_template(
         'NVTiepNhan/tiepnhan.html',
-        danh_sach_ptn=danh_sach_ptn
+        danh_sach_ptn=danh_sach_ptn,
+        tong_so_ptn=tong_so_ptn,
+        max_sl=max_sl
     )
+
 
 
 @app.route('/tiepnhan/taophieu', methods=['GET', 'POST'])
@@ -72,6 +78,18 @@ def tiepnhan_taophieu():
         return check
 
     if request.method == 'POST':
+
+        max_sl = dao.get_quy_dinh_sl_xe_nhan()
+        if max_sl is None:
+            flash("Không tìm thấy quy định về số lượng xe nhận!", "danger")
+            return redirect(url_for('tiepnhan_taophieu'))
+
+        sl_hom_nay = dao.count_phieu_tiep_nhan_today()
+
+        if sl_hom_nay >= max_sl:
+            flash(f"Hôm nay đã nhận đủ {max_sl} xe theo quy định! Không thể nhận thêm.", "warning")
+            return redirect(url_for('tiepnhan_dashboard'))
+
         data = {
             "customer_name": request.form.get('customer_name'),
             "customer_sdt": request.form.get('customer_sdt'),
@@ -256,6 +274,7 @@ def suachua_delete_item(ctsc_id):
     ok, message = dao.delete_chitiet_psc(ctsc_id)
     flash(message, "success" if ok else "danger")
     return redirect(url_for('suachua_chi_tiet', psc_id=psc_id))
+
 
 @app.route('/suachua/xacnhan/<int:psc_id>', methods=['POST'])
 @login_required
@@ -593,7 +612,6 @@ def quanly_hangmuc_edit(id):
         return redirect(url_for('quanly_hangmuc'))
 
     return render_template('quanly/tao_or_sua_hm.html', hangmuc=hm)
-
 
 
 @app.route('/quanly/hangmuc/delete/<int:id>', methods=['POST'])
