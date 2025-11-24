@@ -4,7 +4,7 @@ from init import app
 import hashlib
 from models import (
     NhanVienBase, LinhKien, HangMuc, Loi, KhachHang, Xe,
-    PhieuTiepNhan, Ptn_loi, LoaiXe, QuyDinh, PhieuSuaChua, ChiTietSuaChua
+    PhieuTiepNhan, Ptn_loi, LoaiXe, TenQuyDinhEnum, PhieuSuaChua, ChiTietSuaChua
 )
 from sqlalchemy.orm import joinedload
 from datetime import date
@@ -324,15 +324,12 @@ def delete_phieu_tiep_nhan(id):
 
 
 def get_quy_dinh_sl_xe_nhan():
-    qd = QuyDinh.query.filter(QuyDinh.ten_quy_dinh.ilike("%sl xe nhan%")).first()
+    qd = QuyDinh.query.filter_by(ten_quy_dinh=TenQuyDinhEnum.SL_XE_NHAN).first()
     return int(qd.noi_dung) if qd else None
 
 
 def count_phieu_tiep_nhan_today():
-    today = date.today()
-    return PhieuTiepNhan.query.filter(
-        func.date(PhieuTiepNhan.ngay_tiep_nhan) == today
-    ).count()
+    return PhieuTiepNhan.query.filter_by(ngay_tiep_nhan=date.today()).count()
 
 
 # def get_phieu_tiep_nhan_1():

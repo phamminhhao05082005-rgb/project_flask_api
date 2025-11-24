@@ -2,8 +2,8 @@ from flask import render_template, request, redirect, url_for, flash, abort, jso
 from flask_login import login_user, logout_user, login_required, current_user
 from init import app, login
 from project import dao
-from models import RoleEnum, LoaiXe, ChiTietSuaChua, HangMuc, LoaiXe, ChiTietSuaChua, PhieuSuaChua
-
+from models import (RoleEnum, LoaiXe, ChiTietSuaChua, HangMuc, LoaiXe, ChiTietSuaChua,
+                    PhieuSuaChua, TenQuyDinhEnum, QuyDinh)
 
 @app.route('/login')
 def index():
@@ -353,9 +353,9 @@ def quanly_linhkien_create():
         if ok:
             return redirect(url_for('quanly_linhkien'))
         else:
-            return render_template('quanly/tao_or_xoa_lk.html', hangmucs=hangmucs, linhkien=None)
+            return render_template('quanly/tao_or_sua_lk.html', hangmucs=hangmucs, linhkien=None)
 
-    return render_template('quanly/tao_or_xoa_lk.html', hangmucs=hangmucs, linhkien=None)
+    return render_template('quanly/tao_or_sua_lk.html', hangmucs=hangmucs, linhkien=None)
 
 
 @app.route('/quanly/linhkien/create-multi', methods=['GET', 'POST'])
@@ -439,7 +439,7 @@ def quanly_linhkien_edit(id):
         if success:
             return redirect(url_for('quanly_linhkien'))
 
-    return render_template('quanly/tao_or_xoa_lk.html', hangmucs=hangmucs, linhkien=lk)
+    return render_template('quanly/tao_or_sua_lk.html', hangmucs=hangmucs, linhkien=lk)
 
 
 @app.route('/quanly/linhkien/delete/<int:id>', methods=['POST'])
@@ -508,15 +508,28 @@ def quanly_quydinh_create():
         return check
 
     if request.method == 'POST':
+        ten_quy_dinh = request.form['ten_quy_dinh']
+        noi_dung = request.form['noi_dung']
+
+        if ten_quy_dinh in [TenQuyDinhEnum.SL_XE_NHAN.name, TenQuyDinhEnum.THUE_VAT.name]:
+            exist = QuyDinh.query.filter_by(ten_quy_dinh=ten_quy_dinh).first()
+            if exist:
+                flash(f"Quy định {ten_quy_dinh} đã tồn tại, không thể tạo trùng.", "danger")
+                return redirect(url_for('quanly_quydinh_create'))
+
         dao.create_quydinh(
-            ten_quy_dinh=request.form['ten_quy_dinh'],
-            noi_dung=request.form['noi_dung'],
+            ten_quy_dinh=ten_quy_dinh,
+            noi_dung=noi_dung,
             quanly_id=current_user.id
         )
         flash("Tạo quy định thành công", "success")
         return redirect(url_for('quanly_quydinh'))
 
-    return render_template('quanly/tao_or_xoa_qd.html', quydinh=None)
+    return render_template(
+        'quanly/tao_or_sua_qd.html',
+        quydinh=None,
+        QuyDinhEnum=TenQuyDinhEnum
+    )
 
 
 @app.route('/quanly/quydinh/edit/<int:id>', methods=['GET', 'POST'])
@@ -536,7 +549,7 @@ def quanly_quydinh_edit(id):
         flash("Cập nhật quy định thành công", "success")
         return redirect(url_for('quanly_quydinh'))
 
-    return render_template('quanly/tao_or_xoa_qd.html', quydinh=qd)
+    return render_template('quanly/tao_or_sua_qd.html', quydinh=qd, QuyDinhEnum=TenQuyDinhEnum)
 
 
 @app.route('/quanly/quydinh/delete/<int:id>', methods=['POST'])

@@ -30,9 +30,26 @@ class NhanVienBase(db.Model, UserMixin):
     def __str__(self):
         return f"{self.name} ({self.role.value})"
 
+import enum
+
+class TenQuyDinhEnum(enum.Enum):
+    SL_XE_NHAN = "SL_XE_NHAN"
+    THUE_VAT = "THUE_VAT"
+    NHAN_VIEN = "NHAN_VIEN"
+
+    @property
+    def label(self):
+        labels = {
+            "SL_XE_NHAN": "Số lượng xe nhận tối đa / ngày",
+            "THUE_VAT": "Thuế VAT (%)",
+            "NHAN_VIEN": "Quy định cho nhân viên",
+        }
+        return labels[self.name]
+
+
 class QuyDinh(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
-    ten_quy_dinh = Column(String(50), nullable=False)
+    ten_quy_dinh = db.Column(db.Enum(TenQuyDinhEnum), nullable=False)
     noi_dung = Column(String(100), nullable=False)
     quanly_id = Column(Integer, ForeignKey(NhanVienBase.id), nullable=False)
 
@@ -177,10 +194,11 @@ if __name__ == "__main__":
         db.session.add_all([ql, tn, sc, tg])
         db.session.commit()
 
-        qd1 = QuyDinh(ten_quy_dinh="Số xe nhận", noi_dung="300", quanly_id=ql.id)
-        qd2 = QuyDinh(ten_quy_dinh="Thuế VAT", noi_dung="0.1", quanly_id=ql.id)
+        qd1 = QuyDinh(ten_quy_dinh=TenQuyDinhEnum.SL_XE_NHAN, noi_dung="30", quanly_id=ql.id)
+        qd2 = QuyDinh(ten_quy_dinh=TenQuyDinhEnum.THUE_VAT, noi_dung="0.1", quanly_id=ql.id)
         db.session.add_all([qd1, qd2])
 
+        #hm
         hm_list = [
             ("Bugi", "Bugi xe máy, ô tô",ql.id),
             ("Nhớt", "Dầu nhớt động cơ",ql.id),
@@ -207,6 +225,7 @@ if __name__ == "__main__":
 
         db.session.commit()
 
+        #lk
         linh_kien_list = [
             ("Bugi Denso", 200000, 50000,100, "Bugi"),
             ("Bugi Iridium", 250000, 45000,100, "Bugi"),
@@ -305,6 +324,7 @@ if __name__ == "__main__":
 
         db.session.commit()
 
+        # kh
         khach_hang_list = [
             ("Nguyen Van A", "0909000001"),
             ("Tran Thi B", "0909000002"),
@@ -325,8 +345,10 @@ if __name__ == "__main__":
             kh_objects.append(kh)
         db.session.commit()
 
+        # xe
         xe_objects = []
         loai_xe_list = [LoaiXe.XE_MAY, LoaiXe.O_TO, LoaiXe.SUV, LoaiXe.Sedan, LoaiXe.XE_TAI]
+
         for i, kh in enumerate(kh_objects):
             xe = Xe(
                 bien_so=f"30{i}A-1234{i}",
@@ -337,46 +359,56 @@ if __name__ == "__main__":
             xe_objects.append(xe)
         db.session.commit()
 
+        # 20 phieu tn
         ptn_list = []
         descriptions = [
             "Kiểm tra tổng thể", "Bảo dưỡng định kỳ", "Sửa phanh", "Thay dầu nhớt",
             "Kiểm tra điện", "Sửa máy lạnh", "Sửa đèn pha", "Sửa còi",
             "Thay xi nhan", "Kiểm tra gương chiếu hậu"
         ]
-        for i in range(10):
+
+        for i in range(20):
             ptn = PhieuTiepNhan(
                 nvtn_id=tn.id,
-                xe_id=xe_objects[i].id,
-                ngay_tiep_nhan=date(2025, 11, 20 + i),
-                description=descriptions[i]
+                xe_id=xe_objects[i % len(xe_objects)].id,  # vòng lại từ 0 - 9
+                ngay_tiep_nhan=date(2025, 11, 20 + (i % 10)),  # tránh lỗi ngày > 30
+                description=descriptions[i % 10]
             )
             db.session.add(ptn)
             ptn_list.append(ptn)
+
         db.session.commit()
 
+        # gan loi cho 20 phieu tn
         loi_list = db.session.query(Loi).all()
+
         for i, ptn in enumerate(ptn_list):
             ptn.lois.append(loi_list[i % len(loi_list)])
             if i % 2 == 0:
                 ptn.lois.append(loi_list[(i + 1) % len(loi_list)])
+
         db.session.commit()
 
+        # 10 phieu dang sc
         psc_list = []
-        for i, ptn in enumerate(ptn_list):
+
+        for i, ptn in enumerate(ptn_list[:10]):
             psc = PhieuSuaChua(
                 ptn_id=ptn.id,
                 nvsc_id=sc.id,
-                ngay_sua_chua=date(2025, 11, 21 + i),
+                ngay_sua_chua=date(2025, 11, 21 + (i % 10)),
                 tong_tien=100000 * (i + 1),
-                da_xac_nhan = True if i % 3 == 0 else False
+                da_xac_nhan=True if i % 3 == 0 else False
             )
             db.session.add(psc)
             psc_list.append(psc)
+
         db.session.commit()
 
+        # 10 ct phieu dang sc
         linh_kien_all = db.session.query(LinhKien).all()
-        for i, psc in enumerate(psc_list):
 
+        for i, psc in enumerate(psc_list):
             for j in range(2):
                 ct = ChiTietSuaChua(
                     psc_id=psc.id,
@@ -385,6 +417,7 @@ if __name__ == "__main__":
                     don_gia=linh_kien_all[(i + j) % len(linh_kien_all)].gia
                 )
                 db.session.add(ct)
+
         db.session.commit()
 
 

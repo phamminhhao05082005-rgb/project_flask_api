@@ -27,7 +27,7 @@
         {% for qd in quydinhs.items %}
         <tr>
             <td>{{ qd.id }}</td>
-            <td>{{ qd.ten_quy_dinh }}</td>
+            <td>{{ qd.ten_quy_dinh.label }}</td>
             <td>{{ qd.noi_dung }}</td>
             <td>
                 <a href="{{ url_for('quanly_quydinh_edit', id=qd.id) }}" class="btn btn-primary btn-sm">Chỉnh sửa</a>
