@@ -69,7 +69,6 @@ def tiepnhan_dashboard():
     )
 
 
-
 @app.route('/tiepnhan/taophieu', methods=['GET', 'POST'])
 @login_required
 def tiepnhan_taophieu():
@@ -346,9 +345,10 @@ def quanly_linhkien_create():
         ten = request.form['ten'].strip()
         gia = float(request.form['gia'])
         tien_cong = float(request.form['tien_cong'])
+        so_luong = int(request.form['so_luong'])
         hangmuc_id = int(request.form['hangmuc'])
 
-        ok, message = dao.create_linhkien(ten, gia, tien_cong, hangmuc_id, current_user.id)
+        ok, message = dao.create_linhkien(ten, gia, tien_cong, so_luong, hangmuc_id, current_user.id)
         flash(message, "success" if ok else "danger")
         if ok:
             return redirect(url_for('quanly_linhkien'))
@@ -374,6 +374,7 @@ def quanly_linhkien_create_multi():
         ten_list = request.form.getlist('ten[]')
         gia_list = request.form.getlist('gia[]')
         tien_cong_list = request.form.getlist('tien_cong[]')
+        so_luong_list = request.form.getlist('so_luong[]')
         hangmuc_list = request.form.getlist('hangmuc[]')
 
         created_count = 0
@@ -386,6 +387,7 @@ def quanly_linhkien_create_multi():
             try:
                 gia = float(gia_list[idx])
                 tien_cong = float(tien_cong_list[idx])
+                so_luong = int(so_luong_list[idx])
             except:
                 continue
 
@@ -395,6 +397,7 @@ def quanly_linhkien_create_multi():
                 ten=ten,
                 gia=gia,
                 tien_cong=tien_cong,
+                so_luong=so_luong,
                 hangmuc_id=hangmuc_id,
                 quanly_id=current_user.id
             )
@@ -429,6 +432,7 @@ def quanly_linhkien_edit(id):
             ten=request.form['ten'],
             gia=float(request.form['gia']),
             tien_cong=float(request.form['tien_cong']),
+            so_luong=int(request.form['so_luong']),
             hangmuc_id=int(request.form['hangmuc'])
         )
         flash(msg, "success" if success else "warning")

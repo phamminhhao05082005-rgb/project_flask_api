@@ -7,8 +7,9 @@ from models import (
     PhieuTiepNhan, Ptn_loi, LoaiXe, QuyDinh, PhieuSuaChua, ChiTietSuaChua
 )
 from sqlalchemy.orm import joinedload
-from datetime import  date
+from datetime import date
 from sqlalchemy import func
+
 
 def auth_user(username, password):
     password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
@@ -37,7 +38,7 @@ def get_linhkien_by_id(id):
     return LinhKien.query.get(id)
 
 
-def create_linhkien(ten, gia, tien_cong, hangmuc_id, quanly_id):
+def create_linhkien(ten, gia, tien_cong,so_luong, hangmuc_id, quanly_id):
     if not is_name_unique(LinhKien, ten, field_name='ten_linh_kien'):
         query = LinhKien.query.filter_by(ten_linh_kien=ten.strip(), hangmuc_id=hangmuc_id)
         if query.first():
@@ -48,6 +49,7 @@ def create_linhkien(ten, gia, tien_cong, hangmuc_id, quanly_id):
         ten_linh_kien=ten.strip(),
         gia=gia,
         tien_cong=tien_cong,
+        so_luong=so_luong,
         hangmuc_id=hangmuc_id,
         quanly_id=quanly_id
     )
@@ -56,7 +58,7 @@ def create_linhkien(ten, gia, tien_cong, hangmuc_id, quanly_id):
     return True, "Tạo linh kiện thành công!"
 
 
-def update_linhkien(id, ten, gia, tien_cong, hangmuc_id):
+def update_linhkien(id, ten, gia, tien_cong,so_luong, hangmuc_id):
     lk = get_linhkien_by_id(id)
     if not lk:
         return False, "Linh kiện không tồn tại"
@@ -68,6 +70,7 @@ def update_linhkien(id, ten, gia, tien_cong, hangmuc_id):
     lk.ten_linh_kien = ten.strip()
     lk.gia = gia
     lk.tien_cong = tien_cong
+    lk.so_luong = so_luong
     lk.hangmuc_id = hangmuc_id
     db.session.commit()
     return True, "Cập nhật linh kiện thành công"
@@ -319,15 +322,18 @@ def delete_phieu_tiep_nhan(id):
         return True
     return False
 
+
 def get_quy_dinh_sl_xe_nhan():
     qd = QuyDinh.query.filter(QuyDinh.ten_quy_dinh.ilike("%sl xe nhan%")).first()
     return int(qd.noi_dung) if qd else None
+
 
 def count_phieu_tiep_nhan_today():
     today = date.today()
     return PhieuTiepNhan.query.filter(
         func.date(PhieuTiepNhan.ngay_tiep_nhan) == today
     ).count()
+
 
 # def get_phieu_tiep_nhan_1():
 #     ptns = PhieuTiepNhan.query.all()
@@ -380,25 +386,36 @@ def get_psc_by_id(psc_id):
 def add_lk_to_psc(psc_id, linh_kien_id, so_luong):
     psc = get_psc_by_id(psc_id)
     if not psc:
-        return False, "Phieu sua chua khong ton tai"
+        return False, "Phiếu sửa chữa không tồn tại"
 
     linh_kien = get_linhkien_by_id(linh_kien_id)
     if not linh_kien:
-        return False, "Linh kien khong ton tai"
+        return False, "Linh kiện không tồn tại"
 
-    thanh_tien = linh_kien.gia * so_luong
+    if linh_kien.so_luong < so_luong:
+        return False, f"Số lượng linh kiện '{linh_kien.ten_linh_kien}' trong kho không đủ ({linh_kien.so_luong})"
 
-    ctsc = ChiTietSuaChua(
-        psc_id=psc_id,
-        linh_kien_id=linh_kien_id,
-        so_luong=so_luong,
-        don_gia=linh_kien.gia
-    )
-    db.session.add(ctsc)
+    ctsc = ChiTietSuaChua.query.filter_by(psc_id=psc_id, linh_kien_id=linh_kien_id).first()
+    if ctsc:
+        # Cộng thêm số lượng
+        ctsc.so_luong += so_luong
+        thanh_tien = linh_kien.gia * so_luong
+    else:
+        ctsc = ChiTietSuaChua(
+            psc_id=psc_id,
+            linh_kien_id=linh_kien_id,
+            so_luong=so_luong,
+            don_gia=linh_kien.gia
+        )
+        db.session.add(ctsc)
+        thanh_tien = linh_kien.gia * so_luong
+
+    linh_kien.so_luong -= so_luong
+
     psc.tong_tien = (psc.tong_tien or 0) + thanh_tien
 
     db.session.commit()
-    return True, "Them linh kien thanh cong"
+    return True, "Thêm linh kiện thành công"
 
 
 def get_all_psc(page=1, per_page=5, kw=None, ngay=None):

@@ -21,8 +21,15 @@
     <div class="mb-3">
         <label class="form-label">Tiền công (VND)</label>
         <input type="number" class="form-control" name="tien_cong" min="0" required
-               value="{{ linhkien.tien_cong if linhkien else 0 }}">
+               value="{{ linhkien.tien_cong if linhkien else '' }}">
     </div>
+
+    <div class="mb-3">
+        <label class="form-label">Số lượng</label>
+        <input type="number" class="form-control" name="so_luong" min="0" required
+               value="{{ linhkien.so_luong if linhkien else '' }}">
+    </div>
+
 
     <div class="mb-3">
         <label class="form-label">Hạng mục</label>

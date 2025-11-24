@@ -42,6 +42,7 @@
         <th>Tên linh kiện</th>
         <th>Giá</th>
         <th>Tiền công</th>
+        <th>Số lượng</th>
         <th>Hạng mục</th>
         <th>Hành động</th>
     </tr>
@@ -53,6 +54,7 @@
         <td>{{ lk.ten_linh_kien }}</td>
         <td>{{ "{:,.0f}".format(lk.gia) }} VNĐ</td>
         <td>{{ "{:,.0f}".format(lk.tien_cong) }} VNĐ</td>
+        <td>{{ lk.so_luong }}</td>
         <td>{{ lk.hangmuc.ten_hang_muc if lk.hangmuc else '-' }}</td>
         <td>
             <a href="{{ url_for('quanly_linhkien_edit', id=lk.id) }}" class="btn btn-primary btn-sm">Chỉnh sửa</a>

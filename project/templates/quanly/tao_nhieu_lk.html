@@ -22,28 +22,36 @@
 
     <table class="table" id="itemsTable">
         <thead>
-            <tr>
-                <th>Tên linh kiện</th>
-                <th>Giá</th>
-                <th>Tiền công</th>
-                <th class="hangmuc-col">Hạng mục</th>
-                <th></th>
-            </tr>
+        <tr>
+            <th>Tên linh kiện</th>
+            <th>Giá</th>
+            <th>Tiền công</th>
+            <th>Số lượng</th>
+            <th class="hangmuc-col">Hạng mục</th>
+            <th></th>
+        </tr>
         </thead>
         <tbody>
-            <tr>
-                <td><input name="ten[]" class="form-control" required></td>
-                <td><input name="gia[]" class="form-control" type="number" min="1000"></td>
-                <td><input name="tien_cong[]" class="form-control" type="number" min="0"></td>
-                <td class="hangmuc-col">
-                    <select name="hangmuc[]" class="form-select">
-                        {% for hm in hangmucs %}
-                        <option value="{{ hm.id }}">{{ hm.ten_hang_muc }}</option>
-                        {% endfor %}
-                    </select>
-                </td>
-                <td><button type="button" class="btn btn-danger" onclick="removeRow(this)">X</button></td>
-            </tr>
+        <tr>
+            <td><input name="ten[]" class="form-control" required
+                       value="{{ linhkien.ten_linh_kien if linhkien else '' }}"></td>
+            <td><input name="gia[]" class="form-control" type="number" min="1000" step="1" required
+                       value="{{ linhkien.gia if linhkien else '' }}"></td>
+            <td><input name="tien_cong[]" class="form-control" type="number" min="0" step="1" required
+                       value="{{ linhkien.tien_cong if linhkien else '' }}"></td>
+            <td><input name="so_luong[]" class="form-control" type="number" min="0" step="1" required
+                       value="{{ linhkien.so_luong if linhkien else '' }}"></td>
+            <td class="hangmuc-col">
+                <select name="hangmuc[]" class="form-select">
+                    {% for hm in hangmucs %}
+                    <option value="{{ hm.id }}">{{ hm.ten_hang_muc }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td>
+                <button type="button" class="btn btn-danger" onclick="removeRow(this)">X</button>
+            </td>
+        </tr>
         </tbody>
     </table>
 
@@ -53,27 +61,27 @@
 </form>
 
 <script>
-function addRow() {
-    let table = document.querySelector("#itemsTable tbody");
-    let row = table.rows[0].cloneNode(true);
-    row.querySelectorAll("input").forEach(i => i.value = "");
-    table.appendChild(row);
-}
+    function addRow() {
+        let table = document.querySelector("#itemsTable tbody");
+        let row = table.rows[0].cloneNode(true);
+        row.querySelectorAll("input").forEach(i => i.value = "");
+        table.appendChild(row);
+    }
 
-function removeRow(btn) {
-    let trs = document.querySelectorAll("#itemsTable tbody tr");
-    if (trs.length > 1) btn.closest("tr").remove();
-}
+    function removeRow(btn) {
+        let trs = document.querySelectorAll("#itemsTable tbody tr");
+        if (trs.length > 1) btn.closest("tr").remove();
+    }
 
-document.querySelectorAll("input[name='same_category']").forEach(r => {
-    r.addEventListener("change", function() {
-        let hide = this.value === "1";
-        document.getElementById("commonCategoryBox").style.display = hide ? "block" : "none";
-        document.querySelectorAll(".hangmuc-col").forEach(c => c.style.display = hide ? "none" : "table-cell");
+    document.querySelectorAll("input[name='same_category']").forEach(r => {
+        r.addEventListener("change", function() {
+            let hide = this.value === "1";
+            document.getElementById("commonCategoryBox").style.display = hide ? "block" : "none";
+            document.querySelectorAll(".hangmuc-col").forEach(c => c.style.display = hide ? "none" : "table-cell");
+        });
     });
-});
 
-document.querySelectorAll(".hangmuc-col").forEach(c => c.style.display = "none");
+    document.querySelectorAll(".hangmuc-col").forEach(c => c.style.display = "none");
 </script>
 
 {% endblock %}
