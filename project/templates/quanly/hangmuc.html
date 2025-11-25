@@ -18,6 +18,7 @@
         <tr>
             <th>ID</th>
             <th>Tên danh mục</th>
+            <th>Mô tả</th>
             <th>Hành động</th>
         </tr>
     </thead>
@@ -26,6 +27,7 @@
         <tr>
             <td>{{ hm.id }}</td>
             <td>{{ hm.ten_hang_muc }}</td>
+            <td>{{hm.mo_ta}}</td>
             <td>
                 <a href="{{ url_for('quanly_hangmuc_edit', id=hm.id) }}" class="btn btn-primary btn-sm">Chỉnh sửa</a>
                 <form action="{{ url_for('quanly_hangmuc_delete', id=hm.id) }}" method="post" style="display:inline-block" onsubmit="return confirm('Bạn có chắc muốn xóa?');">

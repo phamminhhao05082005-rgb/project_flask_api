@@ -9,7 +9,7 @@
 {% include 'layout/flash_messages.html' %}
 <form method="get" class="mb-3 d-flex align-items-center">
     <label class="me-2">Tìm kiếm:</label>
-    <input type="text" class="form-control me-2" name="q" placeholder="Nhập tên hạng mục..."
+    <input type="text" class="form-control me-2" name="q" placeholder="Nhập tên quy định..."
            value="{{ request.args.get('q', '') }}" style="width:200px;">
     <button type="submit" class="btn btn-primary">Lọc</button>
     <a href="{{ url_for('quanly_quydinh') }}" class="btn btn-primary ms-3">Reset</a>

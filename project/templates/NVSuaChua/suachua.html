@@ -13,20 +13,16 @@
     <form class="row g-3 mb-4">
         <div class="col-md-4">
             <input type="text" class="form-control" name="kw_cho" placeholder="Nhập biển số xe..."
-                   value="{{ request.args.get('kw_cho', '') }}">
+                   value="{{ kw_cho }}">
         </div>
-
         <div class="col-md-3">
-            <input type="date" class="form-control" name="ngay_cho"
-                   value="{{ request.args.get('ngay_cho', '') }}">
+            <input type="date" class="form-control" name="ngay_cho" value="{{ ngay_cho }}">
         </div>
-
         <div class="col-md-2">
             <button type="submit" class="btn btn-info w-100 text-white">
                 <i class="bi bi-search"></i> Tìm kiếm
             </button>
         </div>
-
         <div class="col-md-2">
             <a href="{{ url_for('suachua_dashboard') }}" class="btn btn-secondary w-100">
                 <i class="bi bi-arrow-counterclockwise"></i> Reset
@@ -80,20 +76,19 @@
         </tbody>
     </table>
 
-    <nav aria-label="Page navigation" class="mt-4">
-        <ul class="pagination justify-content-center">
+    <nav aria-label="Page navigation">
+        <ul class="pagination">
             <li class="page-item {% if not phieu_cho_sua.has_prev %}disabled{% endif %}">
                 <a class="page-link"
-                   href="{{ url_for('suachua_dashboard', page_phieuchosua=phieu_cho_sua.prev_num, page=pscs.page) }}">
-                    &laquo; Trước
+                   href="{{ url_for('suachua_dashboard', page_phieuchosua=phieu_cho_sua.prev_num, page=pscs.page, kw=kw, ngay=ngay, kw_cho=kw_cho, ngay_cho=ngay_cho) }}">
+                    &laquo;
                 </a>
             </li>
-
             {% for page_num in phieu_cho_sua.iter_pages() %}
             {% if page_num %}
             <li class="page-item {% if page_num == phieu_cho_sua.page %}active{% endif %}">
                 <a class="page-link"
-                   href="{{ url_for('suachua_dashboard', page_phieuchosua=page_num, page=pscs.page) }}">
+                   href="{{ url_for('suachua_dashboard', page_phieuchosua=page_num, page=pscs.page, kw=kw, ngay=ngay, kw_cho=kw_cho, ngay_cho=ngay_cho) }}">
                     {{ page_num }}
                 </a>
             </li>
@@ -101,11 +96,10 @@
             <li class="page-item disabled"><span class="page-link">…</span></li>
             {% endif %}
             {% endfor %}
-
             <li class="page-item {% if not phieu_cho_sua.has_next %}disabled{% endif %}">
                 <a class="page-link"
-                   href="{{ url_for('suachua_dashboard', page_phieuchosua=phieu_cho_sua.next_num, page=pscs.page) }}">
-                    Tiếp &raquo;
+                   href="{{ url_for('suachua_dashboard', page_phieuchosua=phieu_cho_sua.next_num, page=pscs.page, kw=kw, ngay=ngay, kw_cho=kw_cho, ngay_cho=ngay_cho) }}">
+                    &raquo;
                 </a>
             </li>
         </ul>
@@ -119,10 +113,10 @@
         <form class="row g-3 mb-4">
             <div class="col-md-4">
                 <input type="text" class="form-control" name="kw" placeholder="Nhập biển số xe..."
-                       value="{{ request.args.get('kw', '') }}">
+                       value="{{ kw }}">
             </div>
             <div class="col-md-3">
-                <input type="date" class="form-control" name="ngay" value="{{ request.args.get('ngay', '') }}">
+                <input type="date" class="form-control" name="ngay" value="{{ ngay }}">
             </div>
             <div class="col-md-2">
                 <button type="submit" class="btn btn-info w-100 text-white">
@@ -206,19 +200,18 @@
         </table>
 
         <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center">
+            <ul class="pagination">
                 <li class="page-item {% if not pscs.has_prev %}disabled{% endif %}">
                     <a class="page-link"
-                       href="{{ url_for('suachua_dashboard', page=pscs.prev_num, page_phieuchosua=phieu_cho_sua.page) }}">
-                        &laquo; Trước
+                       href="{{ url_for('suachua_dashboard', page=pscs.prev_num, page_phieuchosua=phieu_cho_sua.page, kw=kw, ngay=ngay, kw_cho=kw_cho, ngay_cho=ngay_cho) }}">
+                        &laquo;
                     </a>
                 </li>
-
                 {% for page_num in pscs.iter_pages() %}
                 {% if page_num %}
                 <li class="page-item {% if page_num == pscs.page %}active{% endif %}">
                     <a class="page-link"
-                       href="{{ url_for('suachua_dashboard', page=page_num, page_phieuchosua=phieu_cho_sua.page) }}">
+                       href="{{ url_for('suachua_dashboard', page=page_num, page_phieuchosua=phieu_cho_sua.page, kw=kw, ngay=ngay, kw_cho=kw_cho, ngay_cho=ngay_cho) }}">
                         {{ page_num }}
                     </a>
                 </li>
@@ -226,11 +219,10 @@
                 <li class="page-item disabled"><span class="page-link">…</span></li>
                 {% endif %}
                 {% endfor %}
-
                 <li class="page-item {% if not pscs.has_next %}disabled{% endif %}">
                     <a class="page-link"
-                       href="{{ url_for('suachua_dashboard', page=pscs.next_num, page_phieuchosua=phieu_cho_sua.page) }}">
-                        Tiếp &raquo;
+                       href="{{ url_for('suachua_dashboard', page=pscs.next_num, page_phieuchosua=phieu_cho_sua.page, kw=kw, ngay=ngay, kw_cho=kw_cho, ngay_cho=ngay_cho) }}">
+                        &raquo;
                     </a>
                 </li>
             </ul>

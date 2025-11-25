@@ -174,7 +174,7 @@ def delete_hangmuc(id):
     hm = get_hangmuc_by_id(id)
     if hm:
         if hm.linh_kiens:
-            return False, "Danh mục này vẫn còn linh kiện, không thể xóa!"
+            return False, "Hạng mục này vẫn còn linh kiện, không thể xóa!"
         db.session.delete(hm)
         db.session.commit()
         return True, "Xóa hạng mục thành công!"
@@ -429,29 +429,42 @@ def get_all_psc(page=1, per_page=5, kw=None, ngay=None):
     ).order_by(PhieuSuaChua.id.desc()).paginate(page=page, per_page=per_page)
 
 
+# dao.py
 def delete_psc(psc_id):
     psc = PhieuSuaChua.query.get(psc_id)
-    if psc:
-        db.session.delete(psc)
-        db.session.commit()
-        return True, "Xoa phieu thanh cong"
-    return False, "Phieu sua chua khong ton tai"
+    if not psc:
+        return False, "Phiếu sửa chữa không tồn tại"
 
+    for ctsc in psc.chi_tiet_sua_chuas:
+        linh_kien = LinhKien.query.get(ctsc.linh_kien_id)
+        if linh_kien:
+            linh_kien.so_luong += ctsc.so_luong
+            db.session.add(linh_kien)
+
+    db.session.delete(psc)
+    db.session.commit()
+    return True, "Xóa phiếu thành công"
 
 def delete_chitiet_psc(ctsc_id):
     ctsc = ChiTietSuaChua.query.get(ctsc_id)
     if not ctsc:
-        return False, "Cho tiet sc ko ton tai"
+        return False, "Chi tiết sửa chữa không tồn tại"
+
+    linh_kien = LinhKien.query.get(ctsc.linh_kien_id)
+    if linh_kien:
+        linh_kien.so_luong += ctsc.so_luong
+        db.session.add(linh_kien)
 
     psc = PhieuSuaChua.query.get(ctsc.psc_id)
     so_tien_can_tru = ctsc.don_gia * ctsc.so_luong
-
     psc.tong_tien = max(0, (psc.tong_tien or 0) - so_tien_can_tru)
+    db.session.add(psc)
 
     db.session.delete(ctsc)
     db.session.commit()
 
-    return True, "Da xoa ctsc thanh cong"
+    return True, "Đã xóa chi tiết phiếu thành công"
+
 
 
 def xac_nhan(psc_id):

@@ -187,15 +187,31 @@ def suachua_dashboard():
     if check:
         return check
 
-    kw = request.args.get('kw')  # keyword lọc theo biển số xe
-    ngay = request.args.get('ngay')  # ngày lọc
+    # Phiếu chờ sửa
+    kw_cho = request.args.get('kw_cho', '')
+    ngay_cho = request.args.get('ngay_cho', '')
+
+    # phiếu dg sửa/ đã sửa
+    kw = request.args.get('kw', '')
+    ngay = request.args.get('ngay', '')
+
     page_phieuchosua = request.args.get('page_phieuchosua', 1, type=int)
-    phieu_cho_sua = dao.get_ptn_cho_psc(page=page_phieuchosua, per_page=5, kw=kw, ngay=ngay)
+    page_pscs = request.args.get('page', 1, type=int)
 
-    page = request.args.get('page', 1, type=int)
-    pscs = dao.get_all_psc(page=page, per_page=5, kw=kw, ngay=ngay)
+    phieu_cho_sua = dao.get_ptn_cho_psc(page=page_phieuchosua, per_page=5, kw=kw_cho, ngay=ngay_cho)
+    pscs = dao.get_all_psc(page=page_pscs, per_page=5, kw=kw, ngay=ngay)
 
-    return render_template('NVSuaChua/suachua.html', phieu_cho_sua=phieu_cho_sua, pscs=pscs, kw=kw, ngay=ngay)
+    return render_template(
+        'NVSuaChua/suachua.html',
+        phieu_cho_sua=phieu_cho_sua,
+        pscs=pscs,
+        kw_cho=kw_cho,
+        ngay_cho=ngay_cho,
+        kw=kw,
+        ngay=ngay
+    )
+
+
 
 
 @app.route('/suachua/nhan-phieu/<int:ptn_id>', methods=['POST'])
@@ -225,7 +241,6 @@ def suachua_chi_tiet(psc_id):
         flash(message, "success" if ok else "danger")
         return redirect(url_for('suachua_chi_tiet', psc_id=psc_id))
 
-    # show trang
     psc = dao.get_psc_by_id(psc_id)
     if not psc:
         flash("Phiếu sửa chữa không tồn tại.", "danger")
