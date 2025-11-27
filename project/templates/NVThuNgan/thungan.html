@@ -1,9 +1,95 @@
-
 {% extends 'layout/base.html' %}
 
 {% block content %}
-<section class="container">
-    <h1>Chào mừng đến với trang thu ngân</h1>
-    <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+<section class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-success">Thu ngân-Xin chào, {{ current_user.name }}</h1>
+        <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+    </div>
+
+    {% include 'layout/flash_messages.html' %}
+
+    <h2 class="mb-3">Danh sách phiếu thanh toán</h2>
+
+    <!-- Form tìm kiếm -->
+    <form class="row g-3 mb-4">
+        <div class="col-md-4">
+            <input type="text" class="form-control" name="kw" placeholder="Tìm biển số xe..." value="{{ kw }}">
+        </div>
+        <div class="col-md-3">
+            <input type="date" class="form-control" name="ngay" value="{{ ngay }}">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-info w-100 text-white">Tìm kiếm</button>
+        </div>
+        <div class="col-md-2">
+            <a href="{{ url_for('thungan_dashboard') }}" class="btn btn-secondary w-100">Reset</a>
+        </div>
+    </form>
+
+    <table class="table table-hover table-bordered">
+        <thead class="table-success">
+        <tr>
+            <th>Phiếu SC</th>
+            <th>Ngày sửa</th>
+            <th>Biển số xe</th>
+            <th>Khách hàng</th>
+            <th class="text-center">Tổng tiền (đã có VAT)</th>
+            <th>Hành động</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for psc in phieu_thanh_toan.items %}
+        <tr>
+            <td>{{ psc.id }}</td>
+            <td>{{ psc.ngay_sua_chua.strftime('%d/%m/%Y') }}</td>
+            <td><strong>{{ psc.phieu_tiep_nhan.xe.bien_so }}</strong></td>
+            <td>{{ psc.phieu_tiep_nhan.xe.khachhang.name }}</td>
+            <td class="text-end fw-bold">
+                {{ "{:,.0f}".format(psc.tong_tien_that) }} đ
+            </td>
+            <td class="text-center">
+                {% if not psc.da_thanh_toan %}
+                <a href="{{ url_for('thungan_chi_tiet', psc_id=psc.id) }}"
+                   class="btn btn-success btn-sm">
+                    <i class="bi bi-cash-coin"></i> Xác nhận thanh toán
+                </a>
+                {% else %}
+                <button class="btn btn-secondary btn-sm" disabled>
+                    <i class="bi bi-check-circle-fill"></i> Đã thanh toán
+                </button>
+                {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="6" class="text-center text-muted py-4">Không có phiếu nào chờ thanh toán.</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Phân trang -->
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if not phieu_thanh_toan.has_prev %}disabled{% endif %}">
+                <a class="page-link"
+                   href="{{ url_for('thungan_dashboard', page=phieu_thanh_toan.prev_num, kw=kw, ngay=ngay) }}">Trước</a>
+            </li>
+            {% for p in phieu_thanh_toan.iter_pages() %}
+            {% if p %}
+            <li class="page-item {% if p == phieu_thanh_toan.page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('thungan_dashboard', page=p, kw=kw, ngay=ngay) }}">{{ p }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+            {% endfor %}
+            <li class="page-item {% if not phieu_thanh_toan.has_next %}disabled{% endif %}">
+                <a class="page-link"
+                   href="{{ url_for('thungan_dashboard', page=phieu_thanh_toan.next_num, kw=kw, ngay=ngay) }}">Sau</a>
+            </li>
+        </ul>
+    </nav>
 </section>
 {% endblock %}

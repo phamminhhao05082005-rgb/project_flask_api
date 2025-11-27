@@ -133,9 +133,22 @@ class ChiTietSuaChua(db.Model): # inject phieu_tiep_nhan
     don_gia = Column(Float, nullable=False)
     linh_kien = relationship('LinhKien', backref='chi_tiet_sua_chuas', lazy=True)
 
+
+class PhieuThanhToan(db.Model):
+    __tablename__ = 'phieu_thanh_toan'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    phieu_sua_chua_id = Column(Integer, ForeignKey('phieu_sua_chua.id'), nullable=False)
+
+    tong_tien = Column(Float, nullable=False)
+    ngay_thanh_toan = Column(Date, nullable=False,default=date.today)
+
+    phieu_sua_chua = relationship("PhieuSuaChua", backref="phieu_thanh_toan", lazy=True)
+
+
 if __name__ == "__main__":
     with app.app_context():
-        # db.drop_all()
+        db.drop_all()
         db.create_all()
         l1 = Loi(ten_loi="Loi dong co")
         l2 = Loi(ten_loi="Loi phanh")

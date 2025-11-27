@@ -4,11 +4,12 @@ from init import app
 import hashlib
 from models import (
     NhanVienBase, LinhKien, HangMuc, Loi, KhachHang, Xe,
-    PhieuTiepNhan, Ptn_loi, LoaiXe, TenQuyDinhEnum, PhieuSuaChua, ChiTietSuaChua
+    PhieuTiepNhan, Ptn_loi, LoaiXe, TenQuyDinhEnum, PhieuSuaChua, ChiTietSuaChua, PhieuThanhToan
 )
 from sqlalchemy.orm import joinedload
 from datetime import date
 from sqlalchemy import func
+
 
 
 def auth_user(username, password):
@@ -479,3 +480,58 @@ def xac_nhan(psc_id):
 # cac ham thao tac voi khach hang
 def get_kh_by_sdt(sdt):
     return KhachHang.query.filter_by(sdt=sdt).first()
+
+
+#====================================================
+#Ham dung de tinh tong chi phi sua xe
+def tinh_tong_tien_phieu_sua_chua(psc_id):
+    psc = PhieuSuaChua.query.get(psc_id)
+    if not psc:
+        return 0.0
+
+    vat_rule = QuyDinh.query.filter_by(ten_quy_dinh="Thuế VAT").first()
+    vat = float(vat_rule.noi_dung) if vat_rule else 0.0
+
+    tien_linh_kien = 0.0
+    tien_cong = 0.0
+
+    for ct in psc.chi_tiet_sua_chuas:
+        tien_linh_kien += ct.so_luong * ct.don_gia
+        tien_cong += ct.so_luong * (ct.linh_kien.tien_cong or 0)
+
+    tong_truoc_thue = tien_linh_kien + tien_cong
+    tong_sau_thue = tong_truoc_thue * (1 + vat)
+
+    return round(tong_sau_thue)
+
+def get_phieu_thanh_toan(page=1, per_page=10, kw=None, ngay=None):
+    query = PhieuSuaChua.query.filter_by(da_xac_nhan=True) \
+        .order_by(PhieuSuaChua.ngay_sua_chua.desc())
+
+    if kw:
+        query = query.join(PhieuTiepNhan).join(Xe) \
+            .filter(Xe.bien_so.ilike(f"%{kw}%"))
+    if ngay:
+        query = query.filter(PhieuSuaChua.ngay_sua_chua == ngay)
+
+    return query.paginate(page=page, per_page=per_page, error_out=False)
+
+# ================== THÊM HÀM LẤY GIÁ TRỊ QUY ĐỊNH ==================
+def lay_gia_tri_quy_dinh(ten_quy_dinh):
+    qd = QuyDinh.query.filter_by(ten_quy_dinh=ten_quy_dinh).first()
+    if qd and qd.noi_dung:
+        try:
+            return float(qd.noi_dung)
+        except:
+            return 0.1
+    return 0.1
+
+
+def tao_phieu_thanh_toan(phieu_sua_chua_id, tong_tien):
+    pt = PhieuThanhToan(
+        phieu_sua_chua_id = phieu_sua_chua_id,
+        tong_tien = tong_tien
+    )
+    db.session.add(pt)
+    db.session.commit()
+    return pt

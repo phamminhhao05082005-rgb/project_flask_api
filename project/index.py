@@ -1,9 +1,11 @@
 from flask import render_template, request, redirect, url_for, flash, abort, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
-from init import app, login
+from init import app, login, db
 from project import dao
-from models import (RoleEnum, LoaiXe, ChiTietSuaChua, HangMuc, LoaiXe, ChiTietSuaChua,
-                    PhieuSuaChua, TenQuyDinhEnum, QuyDinh)
+from datetime import datetime
+from sqlalchemy import func
+from models import (RoleEnum, PhieuTiepNhan, Loi, Xe, HangMuc, LoaiXe, ChiTietSuaChua,
+                    PhieuSuaChua, TenQuyDinhEnum, QuyDinh, PhieuThanhToan, Ptn_loi)
 
 @app.route('/login')
 def index():
@@ -308,13 +310,99 @@ def suachua_xac_nhan(psc_id):
     return redirect(url_for('suachua_dashboard'))
 
 
+
 @app.route('/thungan')
 @login_required
 def thungan_dashboard():
     check = check_role(RoleEnum.THUNGAN)
     if check:
         return check
-    return render_template('NVThuNgan/thungan.html')
+
+    kw = request.args.get('kw')
+    ngay = request.args.get('ngay')
+    page = request.args.get('page', 1, type=int)
+
+    phieu_thanh_toan = dao.get_phieu_thanh_toan(page=page, per_page=4, kw=kw, ngay=ngay)
+
+    vat = dao.lay_gia_tri_quy_dinh('VAT') or 0.1
+    he_so_vat = 1 + vat
+
+    for psc in phieu_thanh_toan.items:
+        tong_truoc_vat = sum(
+            (ct.don_gia + ct.linh_kien.tien_cong) * ct.so_luong
+            for ct in psc.chi_tiet_sua_chuas
+        )
+        psc.tong_tien_that = round(tong_truoc_vat * he_so_vat)
+
+    return render_template('NVThuNgan/thungan.html',
+                           phieu_thanh_toan=phieu_thanh_toan,
+                           kw=kw or '',
+                           ngay=ngay or '')
+
+
+@app.route('/thungan/chi-tiet/<int:psc_id>')
+@login_required
+def thungan_chi_tiet(psc_id):
+    check = check_role(RoleEnum.THUNGAN)
+    if check:
+        return check
+
+    psc = dao.get_psc_by_id(psc_id)
+    if not psc or not psc.da_xac_nhan:
+        flash("Phiếu không tồn tại hoặc chưa được xác nhận sửa xong!", "danger")
+        return redirect(url_for('thungan_dashboard'))
+
+    vat = dao.lay_gia_tri_quy_dinh('VAT') or 0.1
+    he_so_vat = 1 + vat
+
+    tong_truoc_vat = sum(
+        (ct.don_gia + ct.linh_kien.tien_cong) * ct.so_luong
+        for ct in psc.chi_tiet_sua_chuas
+    )
+    tong_that = round(tong_truoc_vat * he_so_vat)
+
+    return render_template('NVThuNgan/chi_tiet_thanh_toan.html',
+                           psc=psc,
+                           tong_that=tong_that)
+
+
+@app.route('/thungan/xac-nhan-thanh-toan/<int:psc_id>', methods=['POST'])
+@login_required
+def thungan_xacnhan_thanh_toan(psc_id):
+    # Kiểm tra quyền bên trong hàm
+    check = check_role(RoleEnum.THUNGAN)
+    if check:
+        return check
+
+    from models import PhieuThanhToan
+
+    # Lấy phiếu sửa chữa
+    psc = PhieuSuaChua.query.get(psc_id)
+    if not psc:
+        flash("Không tìm thấy phiếu sửa chữa!", "danger")
+        return redirect(url_for('thungan_dashboard'))
+
+    # === TÍNH TỔNG TIỀN ===
+    tong = 0
+    for ct in psc.chi_tiet_sua_chuas:
+        tien_lk = ct.don_gia * ct.so_luong
+        tien_cong = ct.linh_kien.tien_cong * ct.so_luong
+        tong += (tien_lk + tien_cong)
+    tong *= 1.1  # VAT 10%
+
+    # === TẠO PHIẾU THANH TOÁN ===
+    pt = PhieuThanhToan(
+        phieu_sua_chua_id=psc.id,
+        tong_tien=tong
+    )
+    db.session.add(pt)
+
+    # Đánh dấu PSC là đã thanh toán
+    psc.da_thanh_toan = True
+    db.session.commit()
+
+    flash("Đã xác nhận thanh toán!", "success")
+    return redirect(url_for('thungan_chi_tiet', psc_id=psc.id))
 
 
 @app.route('/quanly')
@@ -579,15 +667,6 @@ def quanly_quydinh_delete(id):
     return redirect(url_for('quanly_quydinh'))
 
 
-@app.route('/quanly/baocao')
-@login_required
-def quanly_baocao():
-    check = check_role(RoleEnum.QUANLY)
-    if check:
-        return check
-    return render_template('quanly/baocao.html')
-
-
 @app.route('/quanly/hangmuc')
 @login_required
 def quanly_hangmuc():
@@ -662,6 +741,129 @@ def check_role(*allowed_roles):
     if current_user.role not in allowed_roles:
         abort(403)
     return None
+
+
+@app.route('/quanly/baocao', methods=['GET', 'POST'])
+@login_required
+def quanly_baocao():
+    check = check_role(RoleEnum.QUANLY)
+    if check:
+        return check
+
+    loai_thong_ke = request.form.get('loai_thong_ke', 'doanh_thu')
+    ngay_chon = request.form.get('ngay_thong_ke')
+
+    doanh_thu_ngay = 0
+    hoa_don_trong_ngay = []
+    tong_hoa_don = 0
+    ty_le_xe_data=[]
+
+    ngay_hien_thi = ""
+    if ngay_chon:
+        try:
+            ngay_obj = datetime.strptime(ngay_chon, '%Y-%m-%d')
+            ngay_hien_thi = ngay_obj.strftime('%d/%m/%Y')
+        except:
+            ngay_hien_thi = "Ngày không hợp lệ"
+
+    if loai_thong_ke == 'doanh_thu' and ngay_chon:
+        try:
+            ngay = datetime.strptime(ngay_chon, '%Y-%m-%d').date()
+            hoa_don_trong_ngay = PhieuThanhToan.query.filter(
+                db.func.date(PhieuThanhToan.ngay_thanh_toan) == ngay
+            ).order_by(PhieuThanhToan.ngay_thanh_toan.desc()).all()
+
+            tong_hoa_don = len(hoa_don_trong_ngay)
+            doanh_thu_ngay = sum(pt.tong_tien for pt in hoa_don_trong_ngay)
+
+        except Exception as e:
+            flash(f"Lỗi khi lấy dữ liệu: {str(e)}", "danger")
+
+    loai_bieu_do = request.form.get('loai_bieu_do', 'cot')  # mặc định là cột
+    loi_thuong_gap_data = []
+
+    # if loai_thong_ke == 'loi_thuong_gap':
+    #     query = db.session.query(
+    #         Loi.ten_loi,
+    #         db.func.count(Loi.id).label('so_lan')
+    #     ).join(
+    #         Ptn_loi, Loi.id == Ptn_loi.c.loi_id
+    #     ).join(
+    #         PhieuTiepNhan, Ptn_loi.c.ptn_id == PhieuTiepNhan.id
+    #     )
+    #
+    #     if ngay_chon:
+    #         try:
+    #             ngay_loc = datetime.strptime(ngay_chon, '%Y-%m-%d').date()
+    #             query = query.filter(db.func.date(PhieuTiepNhan.ngay_tiep_nhan) == ngay_loc)
+    #         except:
+    #             flash("Ngày không hợp lệ!", "danger")
+    #
+    #     # Thực hiện thống kê top 10 lỗi trong ngày đó
+    #     result = query.group_by(Loi.id, Loi.ten_loi
+    #                             ).order_by(db.func.count(Loi.id).desc()
+    #                                        ).limit(10).all()
+    #
+    #     loi_thuong_gap_data = [
+    #         {"ten_loi": item.ten_loi or "Không xác định", "so_lan": item.so_lan}
+    #         for item in result
+    #     ]
+    #
+    #     if not loi_thuong_gap_data:
+    #         loi_thuong_gap_data = []
+    #         flash(f"Ngày {ngay_hien_thi} chưa có lỗi nào được ghi nhận!", "info")
+
+    if loai_thong_ke == 'loai_xe':
+        from sqlalchemy import func
+
+    query = db.session.query(
+        Xe.loai_xe,  # Enum: XE_MAY, O_TO, ...
+        db.func.count(PhieuTiepNhan.id).label('so_luong')
+    ).join(
+        PhieuTiepNhan, PhieuTiepNhan.xe_id == Xe.id
+    )
+
+    # LỌC THEO NGÀY TIẾP NHẬN CHÍNH XÁC
+    if ngay_chon:
+        try:
+            ngay_loc = datetime.strptime(ngay_chon, '%Y-%m-%d').date()
+            query = query.filter(db.func.date(PhieuTiepNhan.ngay_tiep_nhan) == ngay_loc)
+        except:
+            flash("Ngày không hợp lệ!", "danger")
+
+    result = query.group_by(Xe.loai_xe
+                            ).order_by(db.func.count(PhieuTiepNhan.id).desc()
+                                       ).all()
+
+    # Tính tổng + tỷ lệ phần trăm
+    tong_xe = sum(row.so_luong for row in result) if result else 0
+    ty_le_xe_data = []
+
+    for row in result:
+        if row.loai_xe:  # tránh None
+            ten_hien_thi = row.loai_xe.value  # Lấy tên tiếng Việt: "Xe máy", "Ô tô", ...
+        else:
+            ten_hien_thi = "Không xác định"
+
+        phan_tram = round((row.so_luong / tong_xe) * 100, 1) if tong_xe > 0 else 0
+
+        ty_le_xe_data.append({
+            "ten_xe": ten_hien_thi,
+            "so_luong": row.so_luong,
+            "phan_tram": phan_tram
+        })
+
+    return render_template('quanly/baocao.html',
+                               loai_thong_ke=loai_thong_ke,
+                               ngay_chon=ngay_chon or '',
+                               doanh_thu_ngay=doanh_thu_ngay,
+                               hoa_don_trong_ngay=hoa_don_trong_ngay,
+                               tong_hoa_don=tong_hoa_don,
+                               loai_bieu_do=loai_bieu_do or 'ngang',
+                               loi_thuong_gap_data=loi_thuong_gap_data,
+                               ty_le_xe_data=ty_le_xe_data
+                               )
+
 
 
 if __name__ == '__main__':

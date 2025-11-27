@@ -1,0 +1,94 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<section class="container mt-4">
+    <h1 class="text-success">Chi tiết thanh toán - Phiếu sửa chữa #{{ psc.id }}</h1>
+    <a href="{{ url_for('thungan_dashboard') }}" class="btn btn-secondary mb-3">
+        Quay lại danh sách
+    </a>
+
+    {% include 'layout/flash_messages.html' %}
+
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <strong>Thông tin khách hàng & xe</strong>
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><strong>Khách hàng:</strong> {{ psc.phieu_tiep_nhan.xe.khachhang.name }}
+                    </li>
+                    <li class="list-group-item"><strong>Số điện thoại:</strong> {{ psc.phieu_tiep_nhan.xe.khachhang.sdt
+                        }}
+                    </li>
+                    <li class="list-group-item"><strong>Biển số:</strong> <span class="badge bg-info fs-5">{{ psc.phieu_tiep_nhan.xe.bien_so }}</span>
+                    </li>
+                    <li class="list-group-item"><strong>Loại xe:</strong> {{ psc.phieu_tiep_nhan.xe.loai_xe.value }}
+                    </li>
+                    <li class="list-group-item"><strong>Nhân viên sửa:</strong> {{ psc.nhan_vien_sua_chua.name }}</li>
+                    <li class="list-group-item"><strong>Ngày sửa:</strong> {{ psc.ngay_sua_chua.strftime('%d/%m/%Y') }}
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header bg-warning text-dark">
+                    <strong>Chi tiết linh kiện & công sửa</strong>
+                </div>
+                <table class="table table-sm">
+                    <thead>
+                    <tr>
+                        <th>Linh kiện/Dịch vụ</th>
+                        <th>SL</th>
+                        <th>Đơn giá linh kiện</th>
+                        <th>Tiền công</th>
+                        <th>Thành tiền</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for ct in psc.chi_tiet_sua_chuas %}
+                    <tr>
+                        <td>{{ ct.linh_kien.ten_linh_kien }}</td>
+                        <td>{{ ct.so_luong }}</td>
+                        <td>{{ "{:,.0f}".format(ct.don_gia * ct.so_luong) }}</td>
+                        <td>{{ "{:,.0f}".format(ct.linh_kien.tien_cong * ct.so_luong) }}</td>
+                        <td>{{ "{:,.0f}".format((ct.don_gia + ct.linh_kien.tien_cong) * ct.so_luong) }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white text-center">
+                    <h4>HOÁ ĐƠN THANH TOÁN</h4>
+                </div>
+                <div class="card-body">
+                    <hr>
+                    <h4 class="text-danger">TỔNG CỘNG (có VAT):
+                        <span class="float-end fw-bold">{{ "{:,.0f}".format(tong_that) }} đ</span>
+                    </h4>
+
+                    <div class="text-center mt-4">
+                        {% if not psc.da_thanh_toan %}
+                        <form action="{{ url_for('thungan_xacnhan_thanh_toan', psc_id=psc.id) }}" method="POST"
+                              style="display: inline;">
+                            <button type="submit" class="btn btn-success btn-lg px-5">
+                                <i class="bi bi-cash-coin"></i> Xác nhận thanh toán
+                            </button>
+                        </form>
+                        {% else %}
+                        <button class="btn btn-secondary btn-lg px-5" disabled>
+                            <i class="bi bi-check-circle-fill"></i> Đã thanh toán thành công
+                        </button>
+
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
