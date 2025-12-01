@@ -1,11 +1,13 @@
-from flask import render_template, request, redirect, url_for, flash, abort, jsonify
+from flask import render_template, request, redirect, url_for, flash, abort, jsonify, make_response
 from flask_login import login_user, logout_user, login_required, current_user
 from init import app, login, db
 from project import dao
-from datetime import datetime
+from datetime import datetime, date
+
 from sqlalchemy import func
 from models import (RoleEnum, PhieuTiepNhan, Loi, Xe, HangMuc, LoaiXe, ChiTietSuaChua,
                     PhieuSuaChua, TenQuyDinhEnum, QuyDinh, PhieuThanhToan, Ptn_loi)
+
 
 @app.route('/login')
 def index():
@@ -120,21 +122,28 @@ def tiepnhan_edit(id):
     if check:
         return check
 
+    ptn = dao.get_phieu_tiep_nhan_by_id(id)
+    if not ptn:
+        flash("Phiếu tiếp nhận không tồn tại!", "danger")
+        return redirect(url_for('tiepnhan_dashboard'))
+
+    if dao.is_phieu_sc_confirmed(id):
+        flash("Việc sửa chữa đã hoàn tất, không thể chỉnh sửa phiếu tiếp nhận được nữa!", "warning")
+        return redirect(url_for('tiepnhan_dashboard'))
+
     if request.method == 'POST':
         new_loi_ids = request.form.getlist('loi_ids')
         description = request.form.get('description')
         try:
             dao.update_phieu_tiep_nhan(id, new_loi_ids, description)
-            flash("Cập nhật phiếu thành công!", "success")
+            if dao.is_phieu_sc_in_progress(id):
+                flash("Cập nhật thành công, quá trình sửa chữa đang được tiến hành. "
+                      "Hãy thông báo cho nhân viên sửa chữa!", "warning")
+            else:
+                flash("Cập nhật phiếu thành công!", "success")
             return redirect(url_for('tiepnhan_dashboard'))
         except Exception as e:
             flash(f"Lỗi khi cập nhật: {str(e)}", "danger")
-
-    # xu ly khi GET
-    ptn = dao.get_phieu_tiep_nhan_by_id(id)
-    if not ptn:
-        flash("Phiếu tiếp nhận không tồn tại!", "danger")
-        return redirect(url_for('tiepnhan_dashboard'))
 
     lois = dao.get_all_loi()
     loai_xes = LoaiXe
@@ -153,6 +162,11 @@ def tiepnhan_delete(id):
     check = check_role(RoleEnum.TIEPNHAN)
     if check:
         return check
+
+    if dao.check_start_sc(id):
+        flash("Không thể xoá! Việc sửa chữa đang được tiến hành.", "danger")
+        return redirect(url_for('tiepnhan_dashboard'))
+
 
     if dao.delete_phieu_tiep_nhan(id):
         flash("Xóa phiếu tiếp nhận thành công!", "success")
@@ -212,8 +226,6 @@ def suachua_dashboard():
         kw=kw,
         ngay=ngay
     )
-
-
 
 
 @app.route('/suachua/nhan-phieu/<int:ptn_id>', methods=['POST'])
@@ -310,34 +322,35 @@ def suachua_xac_nhan(psc_id):
     return redirect(url_for('suachua_dashboard'))
 
 
-
 @app.route('/thungan')
 @login_required
 def thungan_dashboard():
+    # Kiểm tra role
     check = check_role(RoleEnum.THUNGAN)
     if check:
         return check
 
-    kw = request.args.get('kw')
-    ngay = request.args.get('ngay')
+    kw = request.args.get('kw', '').strip()
+    ngay = request.args.get('ngay', '').strip()
     page = request.args.get('page', 1, type=int)
 
-    phieu_thanh_toan = dao.get_phieu_thanh_toan(page=page, per_page=4, kw=kw, ngay=ngay)
+    phieu_thanh_toan_pagination = dao.get_phieu_thanh_toan(page=page, per_page=4, kw=kw, ngay=ngay)
 
-    vat = dao.lay_gia_tri_quy_dinh('VAT') or 0.1
-    he_so_vat = 1 + vat
+    for psc in phieu_thanh_toan_pagination.items:
+        pt = PhieuThanhToan.query.filter_by(phieu_sua_chua_id=psc.id).first()
+        if pt:
+            psc.da_thanh_toan = pt.da_thanh_toan  # Lấy cờ thanh toán từ phiếu thanh toán
+            psc.tong_tien = pt.tong_tien
+        else:
+            psc.da_thanh_toan = False
+            psc.tong_tien = dao.tinh_tong_tien_phieu_sua_chua(psc.id)
 
-    for psc in phieu_thanh_toan.items:
-        tong_truoc_vat = sum(
-            (ct.don_gia + ct.linh_kien.tien_cong) * ct.so_luong
-            for ct in psc.chi_tiet_sua_chuas
-        )
-        psc.tong_tien_that = round(tong_truoc_vat * he_so_vat)
-
-    return render_template('NVThuNgan/thungan.html',
-                           phieu_thanh_toan=phieu_thanh_toan,
-                           kw=kw or '',
-                           ngay=ngay or '')
+    return render_template(
+        'NVThuNgan/thungan.html',
+        phieu_thanh_toan=phieu_thanh_toan_pagination,
+        kw=kw,
+        ngay=ngay
+    )
 
 
 @app.route('/thungan/chi-tiet/<int:psc_id>')
@@ -352,53 +365,58 @@ def thungan_chi_tiet(psc_id):
         flash("Phiếu không tồn tại hoặc chưa được xác nhận sửa xong!", "danger")
         return redirect(url_for('thungan_dashboard'))
 
-    vat = dao.lay_gia_tri_quy_dinh('VAT') or 0.1
-    he_so_vat = 1 + vat
 
-    tong_truoc_vat = sum(
-        (ct.don_gia + ct.linh_kien.tien_cong) * ct.so_luong
-        for ct in psc.chi_tiet_sua_chuas
+    quy_dinh_vat = QuyDinh.query.filter_by(ten_quy_dinh=TenQuyDinhEnum.THUE_VAT).first()
+    vat_rate = float(quy_dinh_vat.noi_dung)  if quy_dinh_vat else 0.001
+
+    tong_that = (
+        psc.phieu_thanh_toan.tong_tien
+        if psc.phieu_thanh_toan
+        else dao.tinh_tong_tien_phieu_sua_chua(psc_id)
     )
-    tong_that = round(tong_truoc_vat * he_so_vat)
 
-    return render_template('NVThuNgan/chi_tiet_thanh_toan.html',
-                           psc=psc,
-                           tong_that=tong_that)
+    da_thanh_toan = psc.phieu_thanh_toan.da_thanh_toan if psc.phieu_thanh_toan else False
+
+    return render_template(
+        'NVThuNgan/chi_tiet_thanh_toan.html',
+        psc=psc,
+        tong_that=tong_that,
+        vat_rate=vat_rate,
+        da_thanh_toan=da_thanh_toan
+    )
+
 
 
 @app.route('/thungan/xac-nhan-thanh-toan/<int:psc_id>', methods=['POST'])
 @login_required
 def thungan_xacnhan_thanh_toan(psc_id):
-    # Kiểm tra quyền bên trong hàm
     check = check_role(RoleEnum.THUNGAN)
     if check:
         return check
 
-    from models import PhieuThanhToan
-
-    # Lấy phiếu sửa chữa
     psc = PhieuSuaChua.query.get(psc_id)
     if not psc:
         flash("Không tìm thấy phiếu sửa chữa!", "danger")
         return redirect(url_for('thungan_dashboard'))
 
-    # === TÍNH TỔNG TIỀN ===
-    tong = 0
-    for ct in psc.chi_tiet_sua_chuas:
-        tien_lk = ct.don_gia * ct.so_luong
-        tien_cong = ct.linh_kien.tien_cong * ct.so_luong
-        tong += (tien_lk + tien_cong)
-    tong *= 1.1  # VAT 10%
+    from models import PhieuThanhToan
 
-    # === TẠO PHIẾU THANH TOÁN ===
-    pt = PhieuThanhToan(
-        phieu_sua_chua_id=psc.id,
-        tong_tien=tong
-    )
-    db.session.add(pt)
+    tong = dao.tinh_tong_tien_phieu_sua_chua(psc_id)
 
-    # Đánh dấu PSC là đã thanh toán
-    psc.da_thanh_toan = True
+    pt = PhieuThanhToan.query.filter_by(phieu_sua_chua_id=psc.id).first()
+    if not pt:
+        pt = PhieuThanhToan(
+            phieu_sua_chua_id=psc.id,
+            tong_tien=tong,
+            thu_ngan_id=current_user.id,
+            da_thanh_toan=True
+        )
+        db.session.add(pt)
+    else:
+        pt.da_thanh_toan = True
+        pt.thu_ngan_id = current_user.id
+        pt.ngay_thanh_toan = date.today()
+
     db.session.commit()
 
     flash("Đã xác nhận thanh toán!", "success")
@@ -545,16 +563,18 @@ def quanly_linhkien_edit(id):
     return render_template('quanly/tao_or_sua_lk.html', hangmucs=hangmucs, linhkien=lk)
 
 
-@app.route('/quanly/linhkien/delete/<int:id>', methods=['POST'])
+@app.route('/api/linhkien/delete/<int:id>', methods=['DELETE'])
 @login_required
-def quanly_linhkien_delete(id):
+def api_delete_linhkien(id):
     check = check_role(RoleEnum.QUANLY)
     if check:
-        return check
+        return jsonify({"message": "Không có quyền thực hiện hành động này"}), 403
 
-    dao.delete_linhkien(id)
-    flash("Xóa linh kiện thành công", "success")
-    return redirect(url_for('quanly_linhkien'))
+    try:
+        dao.delete_linhkien(id)
+        return jsonify({"message": "Xóa linh kiện thành công"}), 200
+    except Exception as e:
+        return jsonify({"message": "Lỗi khi xóa linh kiện"}), 500
 
 
 @app.route('/quanly/linhkien/delete-multi', methods=['GET', 'POST'])
@@ -613,11 +633,12 @@ def quanly_quydinh_create():
     if request.method == 'POST':
         ten_quy_dinh = request.form['ten_quy_dinh']
         noi_dung = request.form['noi_dung']
+        label = TenQuyDinhEnum[ten_quy_dinh].label
 
         if ten_quy_dinh in [TenQuyDinhEnum.SL_XE_NHAN.name, TenQuyDinhEnum.THUE_VAT.name]:
             exist = QuyDinh.query.filter_by(ten_quy_dinh=ten_quy_dinh).first()
             if exist:
-                flash(f"Quy định {ten_quy_dinh} đã tồn tại, không thể tạo trùng.", "danger")
+                flash(f'Quy định "{label}" đã tồn tại, không thể tạo trùng.', "danger")
                 return redirect(url_for('quanly_quydinh_create'))
 
         dao.create_quydinh(
@@ -625,7 +646,7 @@ def quanly_quydinh_create():
             noi_dung=noi_dung,
             quanly_id=current_user.id
         )
-        flash("Tạo quy định thành công", "success")
+        flash(f'Tạo quy định "{label}" thành công', "success")
         return redirect(url_for('quanly_quydinh'))
 
     return render_template(
@@ -655,17 +676,20 @@ def quanly_quydinh_edit(id):
     return render_template('quanly/tao_or_sua_qd.html', quydinh=qd, QuyDinhEnum=TenQuyDinhEnum)
 
 
-@app.route('/quanly/quydinh/delete/<int:id>', methods=['POST'])
+@app.route('/api/quydinh/delete/<int:id>', methods=['DELETE'])
 @login_required
-def quanly_quydinh_delete(id):
+def api_quydinh_delete(id):
     check = check_role(RoleEnum.QUANLY)
     if check:
-        return check
+        return jsonify({"message": "Không có quyền"}), 403
+
+    quydinh = QuyDinh.query.get_or_404(id)
+
+    if quydinh.ten_quy_dinh in ["SL_XE_NHAN", "THUE_VAT"]:
+        return jsonify({"message": f"Không thể xóa quy định {quydinh.ten_quy_dinh}!"}), 400
 
     dao.delete_quydinh(id)
-    flash("Xóa quy định thành công", "success")
-    return redirect(url_for('quanly_quydinh'))
-
+    return jsonify({"message": "Xóa quy định thành công"}), 200
 
 @app.route('/quanly/hangmuc')
 @login_required
@@ -725,16 +749,19 @@ def quanly_hangmuc_edit(id):
     return render_template('quanly/tao_or_sua_hm.html', hangmuc=hm)
 
 
-@app.route('/quanly/hangmuc/delete/<int:id>', methods=['POST'])
+@app.route('/api/hangmuc/delete/<int:id>', methods=['DELETE'])
 @login_required
-def quanly_hangmuc_delete(id):
+def api_hangmuc_delete(id):
     check = check_role(RoleEnum.QUANLY)
     if check:
-        return check
+        return jsonify({"message": "Không có quyền"}), 403
 
-    success, message = dao.delete_hangmuc(id)
-    flash(message, "success" if success else "danger")
-    return redirect(url_for('quanly_hangmuc'))
+    try:
+        success, message = dao.delete_hangmuc(id)
+        status = 200 if success else 400
+        return jsonify({"message": message}), status
+    except Exception as e:
+        return jsonify({"message": "Lỗi khi xóa hạng mục"}), 500
 
 
 def check_role(*allowed_roles):
@@ -756,7 +783,7 @@ def quanly_baocao():
     doanh_thu_ngay = 0
     hoa_don_trong_ngay = []
     tong_hoa_don = 0
-    ty_le_xe_data=[]
+    ty_le_xe_data = []
 
     ngay_hien_thi = ""
     if ngay_chon:
@@ -854,16 +881,15 @@ def quanly_baocao():
         })
 
     return render_template('quanly/baocao.html',
-                               loai_thong_ke=loai_thong_ke,
-                               ngay_chon=ngay_chon or '',
-                               doanh_thu_ngay=doanh_thu_ngay,
-                               hoa_don_trong_ngay=hoa_don_trong_ngay,
-                               tong_hoa_don=tong_hoa_don,
-                               loai_bieu_do=loai_bieu_do or 'ngang',
-                               loi_thuong_gap_data=loi_thuong_gap_data,
-                               ty_le_xe_data=ty_le_xe_data
-                               )
-
+                           loai_thong_ke=loai_thong_ke,
+                           ngay_chon=ngay_chon or '',
+                           doanh_thu_ngay=doanh_thu_ngay,
+                           hoa_don_trong_ngay=hoa_don_trong_ngay,
+                           tong_hoa_don=tong_hoa_don,
+                           loai_bieu_do=loai_bieu_do or 'ngang',
+                           loi_thuong_gap_data=loi_thuong_gap_data,
+                           ty_le_xe_data=ty_le_xe_data
+                           )
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Date, Float, ForeignKey, Enum, Boolean
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy.testing.provision import drop_db
 
 from init import db, app
@@ -59,7 +59,7 @@ class HangMuc(db.Model):
     ten_hang_muc = Column(String(100), nullable=False)
     mo_ta = Column(String(255), nullable=True)
     quanly_id = Column(Integer, ForeignKey(NhanVienBase.id), nullable=False)
-    linh_kiens = relationship("LinhKien",backref="hangmuc",lazy=True,cascade="all, delete-orphan")
+    linh_kiens = relationship("LinhKien",backref="hangmuc",lazy=True)
 
 class LinhKien(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -68,7 +68,7 @@ class LinhKien(db.Model):
     tien_cong = Column(Float, nullable=True, default=0)
     so_luong = Column(Integer, nullable=False, default=0)
     quanly_id = Column(Integer, ForeignKey(NhanVienBase.id), nullable=False)
-    hangmuc_id = Column(Integer, ForeignKey(HangMuc.id))
+    hangmuc_id = Column(Integer, ForeignKey(HangMuc.id,ondelete="RESTRICT"))
 
 class KhachHang(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -123,6 +123,11 @@ class PhieuSuaChua(db.Model):
     da_xac_nhan = Column(Boolean, default=False)
     chi_tiet_sua_chuas = relationship('ChiTietSuaChua', backref='phieu_sua_chua', lazy=True, cascade='all, delete-orphan')
     nhan_vien_sua_chua = relationship('NhanVienBase',backref='phieu_sua_chua', lazy=True)
+    phieu_thanh_toan = relationship(
+        "PhieuThanhToan",
+        uselist=False,
+        back_populates="phieu_sua_chua"
+    )
 
 class ChiTietSuaChua(db.Model): # inject phieu_tiep_nhan
     __tablename__ = 'chi_tiet_sua_chua'
@@ -136,14 +141,18 @@ class ChiTietSuaChua(db.Model): # inject phieu_tiep_nhan
 
 class PhieuThanhToan(db.Model):
     __tablename__ = 'phieu_thanh_toan'
-
     id = Column(Integer, primary_key=True, autoincrement=True)
-    phieu_sua_chua_id = Column(Integer, ForeignKey('phieu_sua_chua.id'), nullable=False)
-
+    phieu_sua_chua_id = Column(Integer, ForeignKey(PhieuSuaChua.id), nullable=False)
+    thu_ngan_id = db.Column(db.Integer, db.ForeignKey(NhanVienBase.id), nullable=False)
     tong_tien = Column(Float, nullable=False)
     ngay_thanh_toan = Column(Date, nullable=False,default=date.today)
-
-    phieu_sua_chua = relationship("PhieuSuaChua", backref="phieu_thanh_toan", lazy=True)
+    da_thanh_toan = Column(Boolean, default=False, nullable=False)
+    phieu_sua_chua = relationship(
+        "PhieuSuaChua",
+        uselist=False,
+        back_populates="phieu_thanh_toan"
+    )
+    thu_ngan = relationship("NhanVienBase", backref="cac_phieu_thanh_toan",lazy=True)
 
 
 if __name__ == "__main__":
@@ -410,8 +419,7 @@ if __name__ == "__main__":
                 ptn_id=ptn.id,
                 nvsc_id=sc.id,
                 ngay_sua_chua=date(2025, 11, 21 + (i % 10)),
-                tong_tien=100000 * (i + 1),
-                da_xac_nhan=True if i % 3 == 0 else False
+                tong_tien=100000 * (i + 1)
             )
             db.session.add(psc)
             psc_list.append(psc)

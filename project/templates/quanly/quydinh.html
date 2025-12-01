@@ -6,7 +6,11 @@
     <h2>Danh sách Quy Định</h2>
     <a href="{{ url_for('quanly_quydinh_create') }}" class="btn btn-success">Tạo quy định mới</a>
 </div>
-{% include 'layout/flash_messages.html' %}
+
+<div id="flash-box">
+    {% include 'layout/flash_messages.html' %}
+</div>
+
 <form method="get" class="mb-3 d-flex align-items-center">
     <label class="me-2">Tìm kiếm:</label>
     <input type="text" class="form-control me-2" name="q" placeholder="Nhập tên quy định..."
@@ -14,29 +18,35 @@
     <button type="submit" class="btn btn-primary">Lọc</button>
     <a href="{{ url_for('quanly_quydinh') }}" class="btn btn-primary ms-3">Reset</a>
 </form>
+
 <table class="table table-striped">
     <thead>
-        <tr>
-            <th>ID</th>
-            <th>Tên quy định</th>
-            <th>Nội dung</th>
-            <th>Hành động</th>
-        </tr>
+    <tr>
+        <th>ID</th>
+        <th>Tên quy định</th>
+        <th>Nội dung</th>
+        <th>Hành động</th>
+    </tr>
     </thead>
     <tbody>
-        {% for qd in quydinhs.items %}
-        <tr>
-            <td>{{ qd.id }}</td>
-            <td>{{ qd.ten_quy_dinh.label }}</td>
-            <td>{{ qd.noi_dung }}</td>
-            <td>
-                <a href="{{ url_for('quanly_quydinh_edit', id=qd.id) }}" class="btn btn-primary btn-sm">Chỉnh sửa</a>
-                <form action="{{ url_for('quanly_quydinh_delete', id=qd.id) }}" method="post" style="display:inline-block" onsubmit="return confirm('Bạn có chắc muốn xóa?');">
-                    <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
+    {% for qd in quydinhs.items %}
+    <tr id="row-{{ qd.id }}">
+        <td>{{ qd.id }}</td>
+        <td>{{ qd.ten_quy_dinh.label }}</td>
+        <td>{{ qd.noi_dung }}</td>
+        <td>
+            <a href="{{ url_for('quanly_quydinh_edit', id=qd.id) }}" class="btn btn-primary btn-sm">Chỉnh sửa</a>
+
+            <!-- Nút xóa AJAX -->
+            <button class="btn btn-danger btn-sm"
+                    onclick="deleteQuyDinh({{ qd.id }}, '{{ qd.ten_quy_dinh.label }}', '{{ qd.ten_quy_dinh.name }}')">
+                Xóa
+            </button>
+
+
+        </td>
+    </tr>
+    {% endfor %}
     </tbody>
 </table>
 
@@ -51,13 +61,13 @@
         {% endif %}
 
         {% for page_num in quydinhs.iter_pages() %}
-            {% if page_num %}
-            <li class="page-item {% if page_num == quydinhs.page %}active{% endif %}">
-                <a class="page-link" href="{{ url_for('quanly_quydinh', page=page_num) }}">{{ page_num }}</a>
-            </li>
-            {% else %}
-            <li class="page-item disabled"><span class="page-link">…</span></li>
-            {% endif %}
+        {% if page_num %}
+        <li class="page-item {% if page_num == quydinhs.page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('quanly_quydinh', page=page_num) }}">{{ page_num }}</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+        {% endif %}
         {% endfor %}
 
         {% if quydinhs.has_next %}
@@ -69,4 +79,44 @@
         {% endif %}
     </ul>
 </nav>
+
+<script>
+    async function deleteQuyDinh(id, tenQuyDinhLabel, tenQuyDinhName) {
+     const flashBox = document.getElementById("flash-box");
+
+     // Chặn xóa nếu là quy định đặc biệt
+     if (["SL_XE_NHAN", "THUE_VAT"].includes(tenQuyDinhName)) {
+         flashBox.innerHTML = `
+             <div class="alert alert-danger alert-dismissible fade show mt-2" role="alert">
+                 Không thể xóa quy định "${tenQuyDinhLabel}"!
+                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+             </div>`;
+         return;
+     }
+
+     if (!confirm("Bạn có chắc muốn xóa?")) return;
+
+     const res = await fetch(`/api/quydinh/delete/${id}`, { method: "DELETE" });
+     const data = await res.json();
+
+     if (res.ok) {
+         const row = document.getElementById("row-" + id);
+         if (row) row.remove();
+
+         flashBox.innerHTML = `
+             <div class="alert alert-success alert-dismissible fade show mt-2" role="alert">
+                 ${data.message || "Xóa thành công!"}
+                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+             </div>`;
+     } else {
+         flashBox.innerHTML = `
+             <div class="alert alert-danger alert-dismissible fade show mt-2" role="alert">
+                 ${data.message || "Có lỗi xảy ra khi xóa!"}
+                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+             </div>`;
+     }
+ }
+
+</script>
+
 {% endblock %}

@@ -323,6 +323,22 @@ def delete_phieu_tiep_nhan(id):
         return True
     return False
 
+def check_start_sc(ptn_id):
+    psc = PhieuSuaChua.query.filter_by(ptn_id=ptn_id).first()
+    return psc is not None
+
+def is_phieu_sc_confirmed(ptn_id):
+    psc = PhieuSuaChua.query.filter_by(ptn_id=ptn_id).first()
+    if not psc:
+        return False
+    return psc.da_xac_nhan is True
+
+def is_phieu_sc_in_progress(ptn_id):
+    psc = PhieuSuaChua.query.filter_by(ptn_id=ptn_id).first()
+    if not psc:
+        return False
+
+    return psc.da_xac_nhan != True
 
 def get_quy_dinh_sl_xe_nhan():
     qd = QuyDinh.query.filter_by(ten_quy_dinh=TenQuyDinhEnum.SL_XE_NHAN).first()
@@ -489,7 +505,7 @@ def tinh_tong_tien_phieu_sua_chua(psc_id):
     if not psc:
         return 0.0
 
-    vat_rule = QuyDinh.query.filter_by(ten_quy_dinh="Thuế VAT").first()
+    vat_rule = QuyDinh.query.filter_by(ten_quy_dinh=TenQuyDinhEnum.THUE_VAT).first()
     vat = float(vat_rule.noi_dung) if vat_rule else 0.0
 
     tien_linh_kien = 0.0
@@ -509,8 +525,10 @@ def get_phieu_thanh_toan(page=1, per_page=10, kw=None, ngay=None):
         .order_by(PhieuSuaChua.ngay_sua_chua.desc())
 
     if kw:
-        query = query.join(PhieuTiepNhan).join(Xe) \
+        query = query.join(PhieuTiepNhan, PhieuSuaChua.ptn_id == PhieuTiepNhan.id) \
+            .join(Xe, PhieuTiepNhan.xe_id == Xe.id) \
             .filter(Xe.bien_so.ilike(f"%{kw}%"))
+
     if ngay:
         query = query.filter(PhieuSuaChua.ngay_sua_chua == ngay)
 
@@ -527,11 +545,13 @@ def lay_gia_tri_quy_dinh(ten_quy_dinh):
     return 0.1
 
 
-def tao_phieu_thanh_toan(phieu_sua_chua_id, tong_tien):
+def tao_phieu_thanh_toan(phieu_sua_chua_id, tong_tien, thu_ngan_id):
     pt = PhieuThanhToan(
-        phieu_sua_chua_id = phieu_sua_chua_id,
-        tong_tien = tong_tien
+        phieu_sua_chua_id=phieu_sua_chua_id,
+        tong_tien=tong_tien,
+        thu_ngan_id=thu_ngan_id
     )
     db.session.add(pt)
     db.session.commit()
     return pt
+

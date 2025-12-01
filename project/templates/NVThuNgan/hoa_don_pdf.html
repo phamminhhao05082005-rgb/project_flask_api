@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #333; padding: 5px; text-align: left; }
+        th { background: #eee; }
+        .text-end { text-align: right; }
+        .fw-bold { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2>HÓA ĐƠN #{{ "%05d"|format(psc.phieu_thanh_toan.id) }}</h2>
+    <p>Khách hàng: {{ psc.phieu_tiep_nhan.xe.khachhang.name }}</p>
+    <p>Số điện thoại: {{ psc.phieu_tiep_nhan.xe.khachhang.sdt }}</p>
+    <p>Biển số: {{ psc.phieu_tiep_nhan.xe.bien_so }}</p>
+    <p>Thu ngân: {{ psc.phieu_thanh_toan.thu_ngan.name }}</p>
+    <p>Ngày thanh toán: {{ psc.phieu_thanh_toan.ngay_thanh_toan.strftime('%d/%m/%Y') }}</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>STT</th>
+                <th>Hạng mục</th>
+                <th>SL</th>
+                <th>Đơn giá</th>
+                <th>Tiền công</th>
+                <th>Thành tiền</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ct in psc.chi_tiet_sua_chuas %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ ct.linh_kien.ten_linh_kien }}</td>
+                <td>{{ ct.so_luong }}</td>
+                <td class="text-end">{{ "{:,.0f}".format(ct.don_gia * ct.so_luong) }}</td>
+                <td class="text-end">{{ "{:,.0f}".format(ct.linh_kien.tien_cong * ct.so_luong) }}</td>
+                <td class="text-end fw-bold">{{ "{:,.0f}".format((ct.don_gia + ct.linh_kien.tien_cong) * ct.so_luong) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="5" class="text-end fw-bold">Tổng cộng:</td>
+                <td class="text-end fw-bold">{{ "{:,.0f}".format(psc.phieu_thanh_toan.tong_tien) }}</td>
+            </tr>
+        </tfoot>
+    </table>
+</body>
+</html>

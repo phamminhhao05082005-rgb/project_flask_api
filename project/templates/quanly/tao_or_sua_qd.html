@@ -23,9 +23,20 @@
     </div>
     <div class="mb-3">
         <label class="form-label">Nội dung</label>
+        {% if quydinh %}
+        {% if quydinh.ten_quy_dinh.name in ['SL_XE_NHAN', 'THUE_VAT'] %}
+        <input type="number" class="form-control" name="noi_dung" required
+               value="{{ quydinh.noi_dung if quydinh else '' }}" step="0.01" min="0">
+        {% else %}
         <input type="text" class="form-control" name="noi_dung" required
                value="{{ quydinh.noi_dung if quydinh else '' }}">
+        {% endif %}
+        {% else %}
+        <input type="text" class="form-control" name="noi_dung" required
+               value="">
+        {% endif %}
     </div>
+
     <button type="submit" class="btn btn-success">{{ quydinh and "Cập nhật" or "Tạo" }}</button>
     <a href="{{ url_for('quanly_quydinh') }}" class="btn btn-secondary">Hủy</a>
 </form>

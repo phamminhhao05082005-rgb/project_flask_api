@@ -12,9 +12,13 @@
             Xóa linh kiện
         </a>
     </div>
-
 </div>
-{% include 'layout/flash_messages.html' %}
+
+<div id="flash-box">
+    {% include 'layout/flash_messages.html' %}
+</div>
+
+
 <form method="get" class="mb-3 d-flex align-items-center">
     <label class="me-2">Lọc theo hạng mục:</label>
     <select class="form-select me-2" name="hangmuc" style="width:200px;"
@@ -49,7 +53,7 @@
     </thead>
     <tbody>
     {% for lk in linhkiens.items %}
-    <tr>
+    <tr id="row-{{ lk.id }}">
         <td>{{ lk.id }}</td>
         <td>{{ lk.ten_linh_kien }}</td>
         <td>{{ "{:,.0f}".format(lk.gia) }} VNĐ</td>
@@ -57,11 +61,16 @@
         <td>{{ lk.so_luong }}</td>
         <td>{{ lk.hangmuc.ten_hang_muc if lk.hangmuc else '-' }}</td>
         <td>
-            <a href="{{ url_for('quanly_linhkien_edit', id=lk.id) }}" class="btn btn-primary btn-sm">Chỉnh sửa</a>
-            <form action="{{ url_for('quanly_linhkien_delete', id=lk.id) }}" method="post" style="display:inline-block"
-                  onsubmit="return confirm('Bạn có chắc muốn xóa?');">
-                <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
-            </form>
+            <a href="{{ url_for('quanly_linhkien_edit', id=lk.id) }}"
+               class="btn btn-primary btn-sm">
+               Chỉnh sửa
+            </a>
+
+            <!-- Nút xóa AJAX -->
+            <button class="btn btn-danger btn-sm"
+                    onclick="deleteLinhKien({{ lk.id }})">
+                Xóa
+            </button>
         </td>
     </tr>
     {% endfor %}
@@ -86,7 +95,7 @@
             <a class="page-link"
                href="{{ url_for('quanly_linhkien', page=page_num, hangmuc=selected_hangmuc,
                     q=request.args.get('q')) }}">
-                    {{ page_num }}</a>
+                {{ page_num }}</a>
         </li>
         {% else %}
         <li class="page-item disabled"><span class="page-link">…</span></li>
@@ -104,4 +113,40 @@
         {% endif %}
     </ul>
 </nav>
+
+<!-- JS delete AJAX -->
+<script>
+async function deleteLinhKien(id) {
+    if (!confirm("Bạn có chắc muốn xóa?")) return;
+
+    const res = await fetch(`/api/linhkien/delete/${id}`, { method: "DELETE" });
+    const data = await res.json(); // ⬅️ Lấy message từ backend
+
+    const flashBox = document.getElementById("flash-box");
+
+    if (res.ok) {
+        // Xóa dòng trong bảng
+        const row = document.getElementById("row-" + id);
+        if (row) row.remove();
+
+        // Hiển thị flash thành công
+        flashBox.innerHTML = `
+            <div class="alert alert-success alert-dismissible fade show mt-2" role="alert">
+                ${data.message || "Xóa thành công!"}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+    } else {
+        // Hiển thị flash lỗi
+        flashBox.innerHTML = `
+            <div class="alert alert-danger alert-dismissible fade show mt-2" role="alert">
+                ${data.message || "Có lỗi xảy ra khi xóa!"}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+    }
+}
+</script>
+
+
 {% endblock %}

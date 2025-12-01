@@ -11,6 +11,8 @@
 
     <div class="row mt-4">
         <div class="col-md-8">
+
+
             <div class="card">
                 <div class="card-header bg-primary text-white">
                     <strong>Thông tin khách hàng & xe</strong>
@@ -21,8 +23,7 @@
                     <li class="list-group-item"><strong>Số điện thoại:</strong> {{ psc.phieu_tiep_nhan.xe.khachhang.sdt
                         }}
                     </li>
-                    <li class="list-group-item"><strong>Biển số:</strong> <span class="badge bg-info fs-5">{{ psc.phieu_tiep_nhan.xe.bien_so }}</span>
-                    </li>
+                    <li class="list-group-item"><strong>Biển số:</strong> {{ psc.phieu_tiep_nhan.xe.bien_so }}</li>
                     <li class="list-group-item"><strong>Loại xe:</strong> {{ psc.phieu_tiep_nhan.xe.loai_xe.value }}
                     </li>
                     <li class="list-group-item"><strong>Nhân viên sửa:</strong> {{ psc.nhan_vien_sua_chua.name }}</li>
@@ -30,6 +31,7 @@
                     </li>
                 </ul>
             </div>
+
 
             <div class="card mt-4">
                 <div class="card-header bg-warning text-dark">
@@ -58,23 +60,24 @@
                     </tbody>
                 </table>
             </div>
+
         </div>
+
 
         <div class="col-md-4">
             <div class="card border-success">
                 <div class="card-header bg-success text-white text-center">
-                    <h4>HOÁ ĐƠN THANH TOÁN</h4>
+                    <h4>Hóa đơn thanh toán</h4>
                 </div>
                 <div class="card-body">
                     <hr>
-                    <h4 class="text-danger">TỔNG CỘNG (có VAT):
+                    <h4 class="text-danger">Tổng tiền (đã có VAT):
                         <span class="float-end fw-bold">{{ "{:,.0f}".format(tong_that) }} đ</span>
                     </h4>
 
                     <div class="text-center mt-4">
-                        {% if not psc.da_thanh_toan %}
-                        <form action="{{ url_for('thungan_xacnhan_thanh_toan', psc_id=psc.id) }}" method="POST"
-                              style="display: inline;">
+                        {% if not psc.phieu_thanh_toan or not psc.phieu_thanh_toan.da_thanh_toan %}
+                        <form action="{{ url_for('thungan_xacnhan_thanh_toan', psc_id=psc.id) }}" method="POST">
                             <button type="submit" class="btn btn-success btn-lg px-5">
                                 <i class="bi bi-cash-coin"></i> Xác nhận thanh toán
                             </button>
@@ -84,11 +87,94 @@
                             <i class="bi bi-check-circle-fill"></i> Đã thanh toán thành công
                         </button>
 
+                        <div class="text-center mt-4">
+                            <button type="button" class="btn btn-danger px-3 shadow-lg" data-bs-toggle="modal"
+                                    data-bs-target="#hoaDonModal"
+                                    style="font-size: 20px; font-weight: bold; padding: 5px 13px;">
+                                Xác nhận xuất hóa đơn
+                            </button>
+                        </div>
                         {% endif %}
                     </div>
+
                 </div>
             </div>
         </div>
     </div>
 </section>
+
+{% if psc.phieu_thanh_toan and psc.phieu_thanh_toan.da_thanh_toan %}
+<div class="modal fade" id="hoaDonModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white text-center">
+                <h4 class="modal-title w-100 fw-bold">HÓA ĐƠN #{{ "%05d"|format(psc.phieu_thanh_toan.id) }}</h4>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-4">
+                    <div class="col-6">Khách hàng:</div>
+                    <div class="col-6">{{ psc.phieu_tiep_nhan.xe.khachhang.name }}</div>
+                    <div class="col-6">Số điện thoại:</div>
+                    <div class="col-6">{{ psc.phieu_tiep_nhan.xe.khachhang.sdt }}</div>
+                    <div class="col-6">Biển số:</div>
+                    <div class="col-6">{{ psc.phieu_tiep_nhan.xe.bien_so }}</div>
+                    <div class="col-6">Thu ngân:</div>
+                    <div class="col-6">{{ psc.phieu_thanh_toan.thu_ngan.name }}</div>
+                    <div class="col-6">Ngày thanh toán:</div>
+                    <div class="col-6">{{ psc.phieu_thanh_toan.ngay_thanh_toan.strftime('%d/%m/%Y') }}</div>
+                </div>
+                <hr class="border-2">
+                <table class="table table-bordered table-hover">
+                    <thead>
+                    <tr>
+                        <th class="text-center">STT</th>
+                        <th>Hạng mục</th>
+                        <th class="text-center">SL</th>
+                        <th class="text-end">Đơn giá</th>
+                        <th class="text-end">Tiền công</th>
+                        <th class="text-end">Thành tiền</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for ct in psc.chi_tiet_sua_chuas %}
+                    <tr>
+                        <td class="text-center">{{ loop.index }}</td>
+                        <td>{{ ct.linh_kien.ten_linh_kien }}</td>
+                        <td class="text-center">{{ ct.so_luong }}</td>
+                        <td class="text-end">{{ "{:,.0f}".format(ct.don_gia * ct.so_luong) }}</td>
+                        <td class="text-end">{{ "{:,.0f}".format(ct.linh_kien.tien_cong * ct.so_luong) }}</td>
+                        <td class="text-end fw-bold">{{ "{:,.0f}".format((ct.don_gia + ct.linh_kien.tien_cong) *
+                            ct.so_luong) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                    <tfoot>
+                    {% set tong_truoc_vat = tong_that / (1 + vat_rate) %}
+                    {% set vat_tien = tong_that - tong_truoc_vat %}
+                    <tr class="table-light text-black">
+                        <td colspan="5" class="text-end fw-bold fs-6">Tổng tiền trước VAT:</td>
+                        <td class="text-end">{{ "{:,.0f}".format(tong_truoc_vat) }}</td>
+                    </tr>
+                    <tr class="table-light text-black">
+                        <td colspan="5" class="text-end fw-bold fs-6">Thuế VAT {{ (vat_rate * 100)|round(1) }}%:</td>
+                        <td class="text-end">{{ "{:,.0f}".format(vat_tien) }}</td>
+                    </tr>
+                    <tr class="table-primary text-black">
+                        <td colspan="5" class="text-end fw-bold fs-5">Tổng cộng:</td>
+                        <td class="text-end fs-3">{{ "{:,.0f}".format(tong_that) }}</td>
+                    </tr>
+                    </tfoot>
+
+                </table>
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <button onclick="window.print()" class="btn btn-success btn-lg">In hóa đơn</button>
+                <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
