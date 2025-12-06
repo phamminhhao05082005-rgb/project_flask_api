@@ -367,7 +367,7 @@ def thungan_chi_tiet(psc_id):
 
 
     quy_dinh_vat = QuyDinh.query.filter_by(ten_quy_dinh=TenQuyDinhEnum.THUE_VAT).first()
-    vat_rate = float(quy_dinh_vat.noi_dung)  if quy_dinh_vat else 0.001
+    vat_rate = float(quy_dinh_vat.noi_dung)   if quy_dinh_vat else 0.001
 
     tong_that = (
         psc.phieu_thanh_toan.tong_tien
@@ -452,31 +452,6 @@ def quanly_linhkien():
         hangmucs=hangmucs,
         selected_hangmuc=hangmuc_id
     )
-
-
-@app.route('/quanly/linhkien/create', methods=['GET', 'POST'])
-@login_required
-def quanly_linhkien_create():
-    check = check_role(RoleEnum.QUANLY)
-    if check:
-        return check
-
-    hangmucs = dao.get_all_hangmuc()
-    if request.method == 'POST':
-        ten = request.form['ten'].strip()
-        gia = float(request.form['gia'])
-        tien_cong = float(request.form['tien_cong'])
-        so_luong = int(request.form['so_luong'])
-        hangmuc_id = int(request.form['hangmuc'])
-
-        ok, message = dao.create_linhkien(ten, gia, tien_cong, so_luong, hangmuc_id, current_user.id)
-        flash(message, "success" if ok else "danger")
-        if ok:
-            return redirect(url_for('quanly_linhkien'))
-        else:
-            return render_template('quanly/tao_or_sua_lk.html', hangmucs=hangmucs, linhkien=None)
-
-    return render_template('quanly/tao_or_sua_lk.html', hangmucs=hangmucs, linhkien=None)
 
 
 @app.route('/quanly/linhkien/create-multi', methods=['GET', 'POST'])

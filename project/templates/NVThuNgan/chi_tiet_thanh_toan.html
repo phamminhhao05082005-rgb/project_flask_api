@@ -151,21 +151,33 @@
                     {% endfor %}
                     </tbody>
                     <tfoot>
-                    {% set tong_truoc_vat = tong_that / (1 + vat_rate) %}
+                    {# Chuyển vat_rate từ % sang hệ số #}
+                    {% set vat_he_so = vat_rate / 100 %}
+
+                    {# Tổng trước VAT #}
+                    {% set tong_truoc_vat = tong_that / (1 + vat_he_so) %}
+
+                    {# VAT tiền #}
                     {% set vat_tien = tong_that - tong_truoc_vat %}
+
                     <tr class="table-light text-black">
                         <td colspan="5" class="text-end fw-bold fs-6">Tổng tiền trước VAT:</td>
                         <td class="text-end">{{ "{:,.0f}".format(tong_truoc_vat) }}</td>
                     </tr>
+
                     <tr class="table-light text-black">
-                        <td colspan="5" class="text-end fw-bold fs-6">Thuế VAT {{ (vat_rate * 100)|round(1) }}%:</td>
+                        <td colspan="5" class="text-end fw-bold fs-6">
+                            Thuế VAT {{ vat_rate }}%:
+                        </td>
                         <td class="text-end">{{ "{:,.0f}".format(vat_tien) }}</td>
                     </tr>
+
                     <tr class="table-primary text-black">
-                        <td colspan="5" class="text-end fw-bold fs-5">Tổng cộng:</td>
+                        <td colspan="5" class="text-end fw-bold fs-5">Tổng cộng (đã gồm VAT):</td>
                         <td class="text-end fs-3">{{ "{:,.0f}".format(tong_that) }}</td>
                     </tr>
                     </tfoot>
+
 
                 </table>
             </div>
