@@ -7,8 +7,8 @@ from models import (
     PhieuTiepNhan, Ptn_loi, LoaiXe, TenQuyDinhEnum, PhieuSuaChua, ChiTietSuaChua, PhieuThanhToan
 )
 from sqlalchemy.orm import joinedload
-from datetime import date
-from sqlalchemy import func
+from datetime import date, datetime
+from sqlalchemy import func, extract
 
 
 
@@ -136,7 +136,7 @@ def get_all_linh_kien():
     return LinhKien.query.all()
 
 
-# cac ham thao tac voi quy dinh
+# cac ham thao tac voi hang muc
 
 def get_quydinh_paginate(page=1, per_page=5, keyword=None):
     query = QuyDinh.query
@@ -557,3 +557,86 @@ def tao_phieu_thanh_toan(phieu_sua_chua_id, tong_tien, thu_ngan_id):
     db.session.commit()
     return pt
 
+
+def revenue_by_day_in_year(year=None):
+    if year is None:
+        year = datetime.now().year
+
+    return (
+        db.session.query(
+            func.extract('day', PhieuThanhToan.ngay_thanh_toan),
+            func.sum(PhieuThanhToan.tong_tien)
+        )
+        .filter(func.extract('year', PhieuThanhToan.ngay_thanh_toan) == year)
+        .group_by(func.extract('day', PhieuThanhToan.ngay_thanh_toan))
+        .order_by(func.extract('day', PhieuThanhToan.ngay_thanh_toan))
+        .all()
+    )
+
+
+def revenue_by_month(year=None):
+    if year is None:
+        year = datetime.now().year
+
+    return (
+        db.session.query(
+            func.extract('month', PhieuThanhToan.ngay_thanh_toan),
+            func.sum(PhieuThanhToan.tong_tien)
+        )
+        .filter(func.extract('year', PhieuThanhToan.ngay_thanh_toan) == year)
+        .group_by(func.extract('month', PhieuThanhToan.ngay_thanh_toan))
+        .order_by(func.extract('month', PhieuThanhToan.ngay_thanh_toan))
+        .all()
+    )
+
+
+def revenue_by_quarter(year=None):
+    if year is None:
+        year = datetime.now().year
+
+    return (
+        db.session.query(
+            func.extract('quarter', PhieuThanhToan.ngay_thanh_toan),
+            func.sum(PhieuThanhToan.tong_tien)
+        )
+        .filter(func.extract('year', PhieuThanhToan.ngay_thanh_toan) == year)
+        .group_by(func.extract('quarter', PhieuThanhToan.ngay_thanh_toan))
+        .order_by(func.extract('quarter', PhieuThanhToan.ngay_thanh_toan))
+        .all()
+    )
+
+def ty_le_loai_xe_by_year(year=None):
+    if year is None:
+        year = datetime.now().year
+
+    return (
+        db.session.query(
+            Xe.loai_xe,
+            func.count(PhieuTiepNhan.id).label('so_luong')
+        )
+        .join(PhieuTiepNhan, PhieuTiepNhan.xe_id == Xe.id)
+        .filter(extract('year', PhieuTiepNhan.ngay_tiep_nhan) == year)
+        .group_by(Xe.loai_xe)
+        .order_by(func.count(PhieuTiepNhan.id).desc())
+        .all()
+    )
+
+
+def top_loi_thuong_gap_by_year(year=None, limit=10):
+    if year is None:
+        year = datetime.now().year
+
+    return (
+        db.session.query(
+            Loi.ten_loi,
+            func.count(Ptn_loi.loi_id).label('so_lan')
+        )
+        .join(Ptn_loi, Loi.id == Ptn_loi.loi_id)
+
+        .join(PhieuTiepNhan, Ptn_loi.ptn_id == PhieuTiepNhan.id)
+        .filter(extract('year', PhieuTiepNhan.ngay_tiep_nhan) == year)
+        .group_by(Loi.id, Loi.ten_loi)
+        .order_by(func.count(Ptn_loi.loi_id).desc())
+        .limit(limit)
+        .all()
+    )

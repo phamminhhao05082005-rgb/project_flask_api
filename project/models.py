@@ -441,6 +441,68 @@ if __name__ == "__main__":
 
         db.session.commit()
 
+        ptn_done_list = ptn_list[:3]
+
+        psc_done_list = []
+
+        ngay_sua_list = [
+            date(2025, 10, 5),
+            date(2025, 10, 20),
+            date(2025, 11, 10),
+        ]
+
+        tong_tien_list = [1500000, 2200000, 1800000]
+
+        for i, ptn in enumerate(ptn_done_list):
+            psc = PhieuSuaChua(
+                ptn_id=ptn.id,
+                nvsc_id=sc.id,
+                ngay_sua_chua=ngay_sua_list[i],
+                tong_tien=tong_tien_list[i],
+                da_xac_nhan=True
+            )
+            db.session.add(psc)
+            psc_done_list.append(psc)
+
+        db.session.commit()
+
+        # ===== CHI TIẾT SỬA CHỮA =====
+        for i, psc in enumerate(psc_done_list):
+            ct1 = ChiTietSuaChua(
+                psc_id=psc.id,
+                linh_kien_id=linh_kien_all[i].id,
+                so_luong=2,
+                don_gia=linh_kien_all[i].gia
+            )
+            ct2 = ChiTietSuaChua(
+                psc_id=psc.id,
+                linh_kien_id=linh_kien_all[i + 1].id,
+                so_luong=1,
+                don_gia=linh_kien_all[i + 1].gia
+            )
+            db.session.add_all([ct1, ct2])
+
+        db.session.commit()
+
+        # ===== PHIẾU THANH TOÁN =====
+        ngay_tt_list = [
+            date(2025, 10, 6),
+            date(2025, 10, 21),
+            date(2025, 11, 11),
+        ]
+
+        for i, psc in enumerate(psc_done_list):
+            ptt = PhieuThanhToan(
+                phieu_sua_chua_id=psc.id,
+                thu_ngan_id=tg.id,
+                tong_tien=psc.tong_tien,
+                ngay_thanh_toan=ngay_tt_list[i],
+                da_thanh_toan=True
+            )
+            db.session.add(ptt)
+
+        db.session.commit()
+
 
 
 

@@ -501,7 +501,7 @@ def quanly_linhkien_create_multi():
             if ok:
                 created_count += 1
             else:
-                flash(message, "warning")  # flash từng linh kiện trùng
+                flash(message, "warning")
 
         if created_count == 0:
             flash("Chưa có linh kiện nào hợp lệ để tạo!", "warning")
@@ -752,119 +752,98 @@ def quanly_baocao():
     if check:
         return check
 
-    loai_thong_ke = request.form.get('loai_thong_ke', 'doanh_thu')
-    ngay_chon = request.form.get('ngay_thong_ke')
+    is_first_load = request.method == 'GET'
+    has_submitted = request.method == 'POST' and request.form.get('action') == 'view'
 
-    doanh_thu_ngay = 0
-    hoa_don_trong_ngay = []
-    tong_hoa_don = 0
+    if request.method == 'POST':
+        # Luôn lấy giá trị từ form khi POST (dù có bấm "Xem báo cáo" hay không)
+        loai_thong_ke = request.form.get('loai_thong_ke', 'doanh_thu')
+        kieu_thong_ke = request.form.get('kieu_thong_ke', 'thang')
+        nam_chon = request.form.get('nam')
+        ngay_chon = request.form.get('ngay')
+    else:
+        # Chỉ set giá trị mặc định khi GET (lần đầu load trang)
+        loai_thong_ke = 'doanh_thu'
+        kieu_thong_ke = 'thang'
+        nam_chon = datetime.now().year
+        ngay_chon = ''
+
+    doanh_thu_data = []
     ty_le_xe_data = []
-
-    ngay_hien_thi = ""
-    if ngay_chon:
+    loi_thuong_gap_data = []
+    tong_doanh_thu = 0
+    tieu_de_thong_ke = ""
+    if has_submitted:
         try:
-            ngay_obj = datetime.strptime(ngay_chon, '%Y-%m-%d')
-            ngay_hien_thi = ngay_obj.strftime('%d/%m/%Y')
-        except:
-            ngay_hien_thi = "Ngày không hợp lệ"
+            if loai_thong_ke == 'doanh_thu':
+                if kieu_thong_ke == 'ngay' and ngay_chon:
+                    ngay_obj = datetime.strptime(ngay_chon, '%Y-%m-%d')
+                    year = ngay_obj.year
+                    day = ngay_obj.day
 
-    if loai_thong_ke == 'doanh_thu' and ngay_chon:
-        try:
-            ngay = datetime.strptime(ngay_chon, '%Y-%m-%d').date()
-            hoa_don_trong_ngay = PhieuThanhToan.query.filter(
-                db.func.date(PhieuThanhToan.ngay_thanh_toan) == ngay
-            ).order_by(PhieuThanhToan.ngay_thanh_toan.desc()).all()
+                    all_days = dao.revenue_by_day_in_year(year=year)
+                    # Lọc chỉ ngày được chọn
+                    doanh_thu_data = [row for row in all_days if int(row[0]) == day]
+                    tieu_de_thong_ke = f"Doanh thu ngày {ngay_obj.strftime('%d/%m/%Y')}"
 
-            tong_hoa_don = len(hoa_don_trong_ngay)
-            doanh_thu_ngay = sum(pt.tong_tien for pt in hoa_don_trong_ngay)
+                elif kieu_thong_ke == 'thang':
+                    year = int(nam_chon) if nam_chon else datetime.now().year
+                    doanh_thu_data = dao.revenue_by_month(year=year)
+                    tieu_de_thong_ke = f"Doanh thu theo tháng năm {year}"
+
+                elif kieu_thong_ke == 'quy':
+                    year = int(nam_chon) if nam_chon else datetime.now().year
+                    doanh_thu_data = dao.revenue_by_quarter(year=year)
+                    tieu_de_thong_ke = f"Doanh thu theo quý năm {year}"
+
+                tong_doanh_thu = sum(row[1] or 0 for row in doanh_thu_data)
+
+            elif loai_thong_ke == 'loai_xe':
+                from dao import ty_le_loai_xe_by_year
+
+                year = int(nam_chon) if nam_chon else datetime.now().year
+                raw_data = ty_le_loai_xe_by_year(year=year)
+
+                tong_xe = sum(row[1] for row in raw_data) if raw_data else 0
+
+                for loai_enum, so_luong in raw_data:
+                    ten_xe = loai_enum.value if loai_enum else "Không xác định"
+                    phan_tram = round(so_luong / tong_xe * 100, 1) if tong_xe > 0 else 0
+                    ty_le_xe_data.append({
+                        "ten_xe": ten_xe,
+                        "so_luong": so_luong,
+                        "phan_tram": phan_tram
+                    })
+                    tieu_de_thong_ke = f"Tỷ lệ loại xe tiếp nhận năm {year}"
+
+            elif loai_thong_ke == 'loi_thuong_gap':
+                from dao import top_loi_thuong_gap_by_year
+
+                year = int(nam_chon) if nam_chon else datetime.now().year
+                loi_thuong_gap_data = top_loi_thuong_gap_by_year(year=year, limit=10)
+
+                tieu_de_thong_ke = f"Các lỗi thường gặp trong năm {year}"
+
 
         except Exception as e:
-            flash(f"Lỗi khi lấy dữ liệu: {str(e)}", "danger")
+            flash(f"Lỗi khi thống kê: {str(e)}", "danger")
+            doanh_thu_data = []
+            tong_doanh_thu = 0
 
-    loai_bieu_do = request.form.get('loai_bieu_do', 'cot')  # mặc định là cột
-    loi_thuong_gap_data = []
-
-    # if loai_thong_ke == 'loi_thuong_gap':
-    #     query = db.session.query(
-    #         Loi.ten_loi,
-    #         db.func.count(Loi.id).label('so_lan')
-    #     ).join(
-    #         Ptn_loi, Loi.id == Ptn_loi.c.loi_id
-    #     ).join(
-    #         PhieuTiepNhan, Ptn_loi.c.ptn_id == PhieuTiepNhan.id
-    #     )
-    #
-    #     if ngay_chon:
-    #         try:
-    #             ngay_loc = datetime.strptime(ngay_chon, '%Y-%m-%d').date()
-    #             query = query.filter(db.func.date(PhieuTiepNhan.ngay_tiep_nhan) == ngay_loc)
-    #         except:
-    #             flash("Ngày không hợp lệ!", "danger")
-    #
-    #     # Thực hiện thống kê top 10 lỗi trong ngày đó
-    #     result = query.group_by(Loi.id, Loi.ten_loi
-    #                             ).order_by(db.func.count(Loi.id).desc()
-    #                                        ).limit(10).all()
-    #
-    #     loi_thuong_gap_data = [
-    #         {"ten_loi": item.ten_loi or "Không xác định", "so_lan": item.so_lan}
-    #         for item in result
-    #     ]
-    #
-    #     if not loi_thuong_gap_data:
-    #         loi_thuong_gap_data = []
-    #         flash(f"Ngày {ngay_hien_thi} chưa có lỗi nào được ghi nhận!", "info")
-
-    if loai_thong_ke == 'loai_xe':
-        from sqlalchemy import func
-
-    query = db.session.query(
-        Xe.loai_xe,  # Enum: XE_MAY, O_TO, ...
-        db.func.count(PhieuTiepNhan.id).label('so_luong')
-    ).join(
-        PhieuTiepNhan, PhieuTiepNhan.xe_id == Xe.id
+    return render_template(
+        'quanly/baocao.html',
+        kieu_thong_ke=kieu_thong_ke,
+        nam_chon=nam_chon or datetime.now().year,
+        ngay_chon=ngay_chon or '',
+        doanh_thu_data=doanh_thu_data,
+        tong_doanh_thu=tong_doanh_thu,
+        tieu_de_thong_ke=tieu_de_thong_ke,
+        loai_thong_ke=loai_thong_ke,
+        ty_le_xe_data=ty_le_xe_data,
+        loi_thuong_gap_data=loi_thuong_gap_data,
+        is_first_load=is_first_load,
+        has_submitted=has_submitted
     )
-
-    # LỌC THEO NGÀY TIẾP NHẬN CHÍNH XÁC
-    if ngay_chon:
-        try:
-            ngay_loc = datetime.strptime(ngay_chon, '%Y-%m-%d').date()
-            query = query.filter(db.func.date(PhieuTiepNhan.ngay_tiep_nhan) == ngay_loc)
-        except:
-            flash("Ngày không hợp lệ!", "danger")
-
-    result = query.group_by(Xe.loai_xe
-                            ).order_by(db.func.count(PhieuTiepNhan.id).desc()
-                                       ).all()
-
-    # Tính tổng + tỷ lệ phần trăm
-    tong_xe = sum(row.so_luong for row in result) if result else 0
-    ty_le_xe_data = []
-
-    for row in result:
-        if row.loai_xe:  # tránh None
-            ten_hien_thi = row.loai_xe.value  # Lấy tên tiếng Việt: "Xe máy", "Ô tô", ...
-        else:
-            ten_hien_thi = "Không xác định"
-
-        phan_tram = round((row.so_luong / tong_xe) * 100, 1) if tong_xe > 0 else 0
-
-        ty_le_xe_data.append({
-            "ten_xe": ten_hien_thi,
-            "so_luong": row.so_luong,
-            "phan_tram": phan_tram
-        })
-
-    return render_template('quanly/baocao.html',
-                           loai_thong_ke=loai_thong_ke,
-                           ngay_chon=ngay_chon or '',
-                           doanh_thu_ngay=doanh_thu_ngay,
-                           hoa_don_trong_ngay=hoa_don_trong_ngay,
-                           tong_hoa_don=tong_hoa_don,
-                           loai_bieu_do=loai_bieu_do or 'ngang',
-                           loi_thuong_gap_data=loi_thuong_gap_data,
-                           ty_le_xe_data=ty_le_xe_data
-                           )
 
 
 if __name__ == '__main__':
