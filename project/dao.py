@@ -558,52 +558,102 @@ def tao_phieu_thanh_toan(phieu_sua_chua_id, tong_tien, thu_ngan_id):
     return pt
 
 
-def revenue_by_day_in_year(year=None):
+def revenue_by_specific_date(date_str):
+    try:
+        date_obj = datetime.strptime(date_str, '%d/%m/%Y')
+    except ValueError:
+        return 0
+
+    result = (
+        db.session.query(
+            func.sum(PhieuThanhToan.tong_tien).label('total')
+        )
+        .filter(func.date(PhieuThanhToan.ngay_thanh_toan) == date_obj.date())
+        .scalar()
+    )
+
+    return result or 0
+
+
+def revenue_by_day_in_month(year=None, month=None):
+    from calendar import monthrange
+
     if year is None:
         year = datetime.now().year
+    if month is None:
+        month = datetime.now().month
 
-    return (
+    actual_data = (
         db.session.query(
-            func.extract('day', PhieuThanhToan.ngay_thanh_toan),
-            func.sum(PhieuThanhToan.tong_tien)
+            func.extract('day', PhieuThanhToan.ngay_thanh_toan).label('day'),
+            func.sum(PhieuThanhToan.tong_tien).label('total')
         )
-        .filter(func.extract('year', PhieuThanhToan.ngay_thanh_toan) == year)
+        .filter(
+            func.extract('year', PhieuThanhToan.ngay_thanh_toan) == year,
+            func.extract('month', PhieuThanhToan.ngay_thanh_toan) == month
+        )
         .group_by(func.extract('day', PhieuThanhToan.ngay_thanh_toan))
-        .order_by(func.extract('day', PhieuThanhToan.ngay_thanh_toan))
         .all()
     )
+
+    data_dict = {int(row[0]): row[1] for row in actual_data}
+
+    num_days = monthrange(year, month)[1]
+    result = []
+    for day in range(1, num_days + 1):
+        total = data_dict.get(day, 0)
+        result.append((day, total))
+
+    return result
 
 
 def revenue_by_month(year=None):
     if year is None:
         year = datetime.now().year
 
-    return (
+    actual_data = (
         db.session.query(
-            func.extract('month', PhieuThanhToan.ngay_thanh_toan),
-            func.sum(PhieuThanhToan.tong_tien)
+            func.extract('month', PhieuThanhToan.ngay_thanh_toan).label('month'),
+            func.sum(PhieuThanhToan.tong_tien).label('total')
         )
         .filter(func.extract('year', PhieuThanhToan.ngay_thanh_toan) == year)
         .group_by(func.extract('month', PhieuThanhToan.ngay_thanh_toan))
-        .order_by(func.extract('month', PhieuThanhToan.ngay_thanh_toan))
         .all()
     )
+
+    data_dict = {int(row[0]): row[1] for row in actual_data}
+
+    result = []
+    for month in range(1, 13):
+        total = data_dict.get(month, 0)
+        result.append((month, total))
+
+    return result
 
 
 def revenue_by_quarter(year=None):
     if year is None:
         year = datetime.now().year
 
-    return (
+    actual_data = (
         db.session.query(
-            func.extract('quarter', PhieuThanhToan.ngay_thanh_toan),
-            func.sum(PhieuThanhToan.tong_tien)
+            func.extract('quarter', PhieuThanhToan.ngay_thanh_toan).label('quarter'),
+            func.sum(PhieuThanhToan.tong_tien).label('total')
         )
         .filter(func.extract('year', PhieuThanhToan.ngay_thanh_toan) == year)
         .group_by(func.extract('quarter', PhieuThanhToan.ngay_thanh_toan))
-        .order_by(func.extract('quarter', PhieuThanhToan.ngay_thanh_toan))
         .all()
     )
+
+    data_dict = {int(row[0]): row[1] for row in actual_data}
+
+    result = []
+    for quarter in range(1, 5):
+        total = data_dict.get(quarter, 0)
+        result.append((quarter, total))
+
+    return result
+
 
 def ty_le_loai_xe_by_year(year=None):
     if year is None:
@@ -616,10 +666,10 @@ def ty_le_loai_xe_by_year(year=None):
         )
         .join(PhieuTiepNhan, PhieuTiepNhan.xe_id == Xe.id)
         .filter(extract('year', PhieuTiepNhan.ngay_tiep_nhan) == year)
-        .group_by(Xe.loai_xe)
-        .order_by(func.count(PhieuTiepNhan.id).desc())
-        .all()
-    )
+                .group_by(Xe.loai_xe)
+                .order_by(func.count(PhieuTiepNhan.id).desc())
+                .all()
+            )
 
 
 def top_loi_thuong_gap_by_year(year=None, limit=10):
@@ -640,3 +690,76 @@ def top_loi_thuong_gap_by_year(year=None, limit=10):
         .limit(limit)
         .all()
     )
+
+
+def revenue_by_day_in_month_paginated(year=None, month=None, page=1, per_page=7):
+
+    from calendar import monthrange
+
+    if year is None:
+        year = datetime.now().year
+    if month is None:
+        month = datetime.now().month
+
+    actual_data = (
+        db.session.query(
+            func.extract('day', PhieuThanhToan.ngay_thanh_toan).label('day'),
+            func.sum(PhieuThanhToan.tong_tien).label('total')
+        )
+        .filter(
+            func.extract('year', PhieuThanhToan.ngay_thanh_toan) == year,
+            func.extract('month', PhieuThanhToan.ngay_thanh_toan) == month
+        )
+        .group_by(func.extract('day', PhieuThanhToan.ngay_thanh_toan))
+        .all()
+    )
+
+    data_dict = {int(row[0]): row[1] for row in actual_data}
+
+    num_days = monthrange(year, month)[1]
+    all_data = []
+    for day in range(1, num_days + 1):
+        total = data_dict.get(day, 0)
+        all_data.append((day, total))
+
+    # Tạo pagination object
+    class SimplePagination:
+        def __init__(self, items, page, per_page, total):
+            self.items = items
+            self.page = page
+            self.per_page = per_page
+            self.total = total
+            self.pages = (total + per_page - 1) // per_page if total > 0 else 1
+
+        @property
+        def has_prev(self):
+            return self.page > 1
+
+        @property
+        def has_next(self):
+            return self.page < self.pages
+
+        @property
+        def prev_num(self):
+            return self.page - 1 if self.has_prev else None
+
+        @property
+        def next_num(self):
+            return self.page + 1 if self.has_next else None
+
+        def iter_pages(self, left_edge=2, left_current=2, right_current=3, right_edge=2):
+            last = 0
+            for num in range(1, self.pages + 1):
+                if num <= left_edge or \
+                        (num > self.page - left_current - 1 and num < self.page + right_current) or \
+                        num > self.pages - right_edge:
+                    if last + 1 != num:
+                        yield None
+                    yield num
+                    last = num
+
+    total = len(all_data)
+    start = (page - 1) * per_page
+    end = start + per_page
+    items = all_data[start:end]
+    return SimplePagination(items, page, per_page, total)

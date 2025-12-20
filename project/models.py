@@ -217,7 +217,7 @@ if __name__ == "__main__":
         db.session.commit()
 
         qd1 = QuyDinh(ten_quy_dinh=TenQuyDinhEnum.SL_XE_NHAN, noi_dung="30", quanly_id=ql.id)
-        qd2 = QuyDinh(ten_quy_dinh=TenQuyDinhEnum.THUE_VAT, noi_dung="0.1", quanly_id=ql.id)
+        qd2 = QuyDinh(ten_quy_dinh=TenQuyDinhEnum.THUE_VAT, noi_dung="10", quanly_id=ql.id)
         db.session.add_all([qd1, qd2])
 
         #hm
@@ -466,7 +466,7 @@ if __name__ == "__main__":
 
         db.session.commit()
 
-        # ===== CHI TIẾT SỬA CHỮA =====
+        # chi tiet sua chua
         for i, psc in enumerate(psc_done_list):
             ct1 = ChiTietSuaChua(
                 psc_id=psc.id,
@@ -484,7 +484,7 @@ if __name__ == "__main__":
 
         db.session.commit()
 
-        # ===== PHIẾU THANH TOÁN =====
+        # phieu thanh toan
         ngay_tt_list = [
             date(2025, 10, 6),
             date(2025, 10, 21),

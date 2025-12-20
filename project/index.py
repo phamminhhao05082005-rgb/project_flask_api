@@ -167,7 +167,6 @@ def tiepnhan_delete(id):
         flash("Không thể xoá! Việc sửa chữa đang được tiến hành.", "danger")
         return redirect(url_for('tiepnhan_dashboard'))
 
-
     if dao.delete_phieu_tiep_nhan(id):
         flash("Xóa phiếu tiếp nhận thành công!", "success")
     else:
@@ -365,9 +364,8 @@ def thungan_chi_tiet(psc_id):
         flash("Phiếu không tồn tại hoặc chưa được xác nhận sửa xong!", "danger")
         return redirect(url_for('thungan_dashboard'))
 
-
     quy_dinh_vat = QuyDinh.query.filter_by(ten_quy_dinh=TenQuyDinhEnum.THUE_VAT).first()
-    vat_rate = float(quy_dinh_vat.noi_dung)   if quy_dinh_vat else 0.001
+    vat_rate = float(quy_dinh_vat.noi_dung) if quy_dinh_vat else 0.001
 
     tong_that = (
         psc.phieu_thanh_toan.tong_tien
@@ -384,7 +382,6 @@ def thungan_chi_tiet(psc_id):
         vat_rate=vat_rate,
         da_thanh_toan=da_thanh_toan
     )
-
 
 
 @app.route('/thungan/xac-nhan-thanh-toan/<int:psc_id>', methods=['POST'])
@@ -666,6 +663,7 @@ def api_quydinh_delete(id):
     dao.delete_quydinh(id)
     return jsonify({"message": "Xóa quy định thành công"}), 200
 
+
 @app.route('/quanly/hangmuc')
 @login_required
 def quanly_hangmuc():
@@ -752,58 +750,72 @@ def quanly_baocao():
     if check:
         return check
 
-    is_first_load = request.method == 'GET'
-    has_submitted = request.method == 'POST' and request.form.get('action') == 'view'
+    loai_thong_ke = request.args.get('loai_thong_ke', 'doanh_thu')
+    kieu_thong_ke = request.args.get('kieu_thong_ke', 'thang')
+    nam_chon = request.args.get('nam', datetime.now().year, type=int)
+    thang_chon = request.args.get('thang', datetime.now().month, type=int)
+    ngay_chon = request.args.get('ngay', '').strip()
+    page = request.args.get('page', 1, type=int)
 
-    if request.method == 'POST':
-        # Luôn lấy giá trị từ form khi POST (dù có bấm "Xem báo cáo" hay không)
-        loai_thong_ke = request.form.get('loai_thong_ke', 'doanh_thu')
-        kieu_thong_ke = request.form.get('kieu_thong_ke', 'thang')
-        nam_chon = request.form.get('nam')
-        ngay_chon = request.form.get('ngay')
-    else:
-        # Chỉ set giá trị mặc định khi GET (lần đầu load trang)
-        loai_thong_ke = 'doanh_thu'
-        kieu_thong_ke = 'thang'
-        nam_chon = datetime.now().year
-        ngay_chon = ''
+    has_submitted = bool(request.args)
 
     doanh_thu_data = []
     ty_le_xe_data = []
     loi_thuong_gap_data = []
     tong_doanh_thu = 0
     tieu_de_thong_ke = ""
+    pagination = None
+
     if has_submitted:
         try:
             if loai_thong_ke == 'doanh_thu':
-                if kieu_thong_ke == 'ngay' and ngay_chon:
-                    ngay_obj = datetime.strptime(ngay_chon, '%Y-%m-%d')
-                    year = ngay_obj.year
-                    day = ngay_obj.day
+                if kieu_thong_ke == 'ngay':
+                    if ngay_chon:
+                        try:
+                            ngay = int(ngay_chon)
 
-                    all_days = dao.revenue_by_day_in_year(year=year)
-                    # Lọc chỉ ngày được chọn
-                    doanh_thu_data = [row for row in all_days if int(row[0]) == day]
-                    tieu_de_thong_ke = f"Doanh thu ngày {ngay_obj.strftime('%d/%m/%Y')}"
+                            from calendar import monthrange
+                            max_day = monthrange(nam_chon, thang_chon)[1]
+
+                            if ngay < 1 or ngay > max_day:
+                                flash(f"Ngày không hợp lệ! Tháng {thang_chon}/{nam_chon} chỉ có {max_day} ngày.",
+                                      "danger")
+                                doanh_thu_data = []
+                                tong_doanh_thu = 0
+                            else:
+                                date_str = f"{ngay:02d}/{thang_chon:02d}/{nam_chon}"
+
+                                from dao import revenue_by_specific_date
+                                doanh_thu = revenue_by_specific_date(date_str)
+                                doanh_thu_data = [(ngay, doanh_thu)]
+                                tong_doanh_thu = doanh_thu
+                                tieu_de_thong_ke = f"Doanh thu ngày {ngay}/{thang_chon}/{nam_chon}"
+                        except ValueError:
+                            flash("Ngày không hợp lệ", "danger")
+                            doanh_thu_data = []
+                            tong_doanh_thu = 0
+                    else:
+                        pagination = dao.revenue_by_day_in_month_paginated(year=nam_chon, month=thang_chon, page=page,
+                                                                       per_page=7)
+                        doanh_thu_data = pagination.items
+
+                        all_data = dao.revenue_by_day_in_month(year=nam_chon, month=thang_chon)
+                        tong_doanh_thu = sum(row[1] for row in all_data)
+                        tieu_de_thong_ke = f"Doanh thu theo ngày của tháng {thang_chon} năm {nam_chon}"
 
                 elif kieu_thong_ke == 'thang':
-                    year = int(nam_chon) if nam_chon else datetime.now().year
-                    doanh_thu_data = dao.revenue_by_month(year=year)
-                    tieu_de_thong_ke = f"Doanh thu theo tháng năm {year}"
+                    doanh_thu_data = dao.revenue_by_month(year=nam_chon)
+                    tieu_de_thong_ke = f"Doanh thu theo tháng năm {nam_chon}"
+                    tong_doanh_thu = sum(row[1] or 0 for row in doanh_thu_data)
 
                 elif kieu_thong_ke == 'quy':
-                    year = int(nam_chon) if nam_chon else datetime.now().year
-                    doanh_thu_data = dao.revenue_by_quarter(year=year)
-                    tieu_de_thong_ke = f"Doanh thu theo quý năm {year}"
-
-                tong_doanh_thu = sum(row[1] or 0 for row in doanh_thu_data)
+                    doanh_thu_data = dao.revenue_by_quarter(year=nam_chon)
+                    tieu_de_thong_ke = f"Doanh thu theo quý năm {nam_chon}"
+                    tong_doanh_thu = sum(row[1] or 0 for row in doanh_thu_data)
 
             elif loai_thong_ke == 'loai_xe':
                 from dao import ty_le_loai_xe_by_year
-
-                year = int(nam_chon) if nam_chon else datetime.now().year
-                raw_data = ty_le_loai_xe_by_year(year=year)
-
+                raw_data = ty_le_loai_xe_by_year(year=nam_chon)
                 tong_xe = sum(row[1] for row in raw_data) if raw_data else 0
 
                 for loai_enum, so_luong in raw_data:
@@ -814,16 +826,12 @@ def quanly_baocao():
                         "so_luong": so_luong,
                         "phan_tram": phan_tram
                     })
-                    tieu_de_thong_ke = f"Tỷ lệ loại xe tiếp nhận năm {year}"
+                tieu_de_thong_ke = f"Tỷ lệ loại xe tiếp nhận năm {nam_chon}"
 
             elif loai_thong_ke == 'loi_thuong_gap':
                 from dao import top_loi_thuong_gap_by_year
-
-                year = int(nam_chon) if nam_chon else datetime.now().year
-                loi_thuong_gap_data = top_loi_thuong_gap_by_year(year=year, limit=10)
-
-                tieu_de_thong_ke = f"Các lỗi thường gặp trong năm {year}"
-
+                loi_thuong_gap_data = top_loi_thuong_gap_by_year(year=nam_chon, limit=10)
+                tieu_de_thong_ke = f"Các lỗi thường gặp trong năm {nam_chon}"
 
         except Exception as e:
             flash(f"Lỗi khi thống kê: {str(e)}", "danger")
@@ -833,18 +841,18 @@ def quanly_baocao():
     return render_template(
         'quanly/baocao.html',
         kieu_thong_ke=kieu_thong_ke,
-        nam_chon=nam_chon or datetime.now().year,
-        ngay_chon=ngay_chon or '',
+        nam_chon=nam_chon,
+        thang_chon=thang_chon,
+        ngay_chon=ngay_chon,
+        pagination=pagination,
         doanh_thu_data=doanh_thu_data,
         tong_doanh_thu=tong_doanh_thu,
         tieu_de_thong_ke=tieu_de_thong_ke,
         loai_thong_ke=loai_thong_ke,
         ty_le_xe_data=ty_le_xe_data,
         loi_thuong_gap_data=loi_thuong_gap_data,
-        is_first_load=is_first_load,
         has_submitted=has_submitted
     )
-
 
 if __name__ == '__main__':
     from project import admin
