@@ -151,10 +151,9 @@
                     {% endfor %}
                     </tbody>
                     <tfoot>
-                    {# Chuyển vat_rate từ % sang hệ số #}
+
                     {% set vat_he_so = vat_rate / 100 %}
 
-                    {# Tổng trước VAT #}
                     {% set tong_truoc_vat = tong_that / (1 + vat_he_so) %}
 
                     {# VAT tiền #}

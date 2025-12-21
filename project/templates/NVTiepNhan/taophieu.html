@@ -10,11 +10,11 @@
           method="POST"
           action="{{ url_for('tiepnhan_edit', id=ptn.id) if ptn else url_for('tiepnhan_taophieu') }}">
 
-        <!-- ==================== 1. Thông tin xe ==================== -->
+
         <fieldset class="border p-3 mb-3 bg-light">
             <legend class="w-auto px-2 text-primary fw-bold">1. Thông tin Xe (Nhập Biển số trước)</legend>
 
-            <!-- Biển số -->
+
             <div class="mb-3">
                 <label for="xe_bien_so" class="form-label">Biển số xe <span class="text-danger">*</span></label>
                 <div class="input-group">
@@ -29,7 +29,7 @@
                 <small id="bienso-feedback" class="form-text text-muted"></small>
             </div>
 
-            <!-- Loại xe -->
+
             <div class="mb-3">
                 <label for="xe_loai_xe" class="form-label">Loại xe</label>
                 <select class="form-select" id="xe_loai_xe" name="xe_loai_xe"
@@ -45,7 +45,7 @@
             </div>
         </fieldset>
 
-        <!-- ==================== 2. Khách hàng ==================== -->
+
         <fieldset class="border p-3 mb-3">
             <legend class="w-auto px-2">2. Thông tin Khách hàng</legend>
 
@@ -65,11 +65,11 @@
             </div>
         </fieldset>
 
-        <!-- ==================== 3. Thông tin lỗi ==================== -->
+
         <fieldset class="border p-3 mb-3">
             <legend class="w-auto px-2">3. Thông tin lỗi & mô tả</legend>
 
-            <!-- Các lỗi -->
+
             <div class="mb-3">
                 <label class="form-label">Các lỗi ghi nhận:</label>
                 {% for loi in lois %}
@@ -86,14 +86,14 @@
                 {% endfor %}
             </div>
 
-            <!-- Mô tả -->
+
             <div class="mb-3">
                 <label for="description" class="form-label">Mô tả</label>
                 <textarea class="form-control" id="description" name="description" rows="3"></textarea>
             </div>
         </fieldset>
 
-        <!-- Nút -->
+
         <div class="text-center">
             <button type="submit" class="btn btn-success btn-lg">
                 {{ 'Cập nhật Phiếu' if ptn else 'Lưu Phiếu' }}
@@ -103,9 +103,9 @@
     </form>
 </section>
 
-<!-- ==================== SCRIPT ==================== -->
+
 <script>
-    // ---- Check biển số gọi API ----
+
     function checkBienSo() {
         let bienSoInput = document.getElementById('xe_bien_so');
         let bienSo = bienSoInput.value.trim();
@@ -159,7 +159,7 @@
         .catch(error => console.error(error));
     }
 
-    // ---- Validate SDT + số lượng lỗi ----
+
     document.addEventListener('DOMContentLoaded', function() {
         const sdtInput = document.getElementById('customer_sdt');
         const form = document.getElementById('phieuForm');

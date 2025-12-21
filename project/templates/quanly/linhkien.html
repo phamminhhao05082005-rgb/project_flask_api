@@ -65,7 +65,7 @@
                Chỉnh sửa
             </a>
 
-            <!-- Nút xóa AJAX -->
+
             <button class="btn btn-danger btn-sm"
                     onclick="deleteLinhKien({{ lk.id }})">
                 Xóa
@@ -113,13 +113,13 @@
     </ul>
 </nav>
 
-<!-- JS delete AJAX -->
+
 <script>
 async function deleteLinhKien(id) {
     if (!confirm("Bạn có chắc muốn xóa?")) return;
 
     const res = await fetch(`/api/linhkien/delete/${id}`, { method: "DELETE" });
-    const data = await res.json(); // ⬅️ Lấy message từ backend
+    const data = await res.json();
 
     const flashBox = document.getElementById("flash-box");
 

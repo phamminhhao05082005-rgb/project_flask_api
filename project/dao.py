@@ -206,7 +206,7 @@ def is_name_unique(model_class, name, exclude_id=None, field_name=None, extra_fi
     if exclude_id:
         query = query.filter(model_class.id != exclude_id)
 
-    # Thêm điều kiện bổ sung
+
     if extra_filter:
         for k, v in extra_filter.items():
             query = query.filter(getattr(model_class, k) == v)
@@ -245,7 +245,7 @@ def create_phieu_tiep_nhan(data, nvtn_id):
             db.session.add(kh)
             db.session.flush()  # lay san id cua kh. Chua permanent, chi la temporary
 
-        # xe
+
         xe = get_xe_by_bien_so(data['xe_bien_so'])
         if not xe:
             xe = Xe(
@@ -256,14 +256,14 @@ def create_phieu_tiep_nhan(data, nvtn_id):
             db.session.add(xe)
             db.session.flush()  # lay san id cua xe
 
-        # tao phieu tiep nhan
+
         ptn = PhieuTiepNhan(
             nvtn_id=nvtn_id,
             xe_id=xe.id,
             description=data.get('description')
         )
         db.session.add(ptn)
-        db.session.flush()  # lay san id cua ptn
+        db.session.flush()
 
         # chi tiet loi
         for loi_id in data['loi_ids']:
@@ -411,7 +411,7 @@ def add_lk_to_psc(psc_id, linh_kien_id, so_luong):
 
     ctsc = ChiTietSuaChua.query.filter_by(psc_id=psc_id, linh_kien_id=linh_kien_id).first()
     if ctsc:
-        # Cộng thêm số lượng
+
         ctsc.so_luong += so_luong
         thanh_tien = linh_kien.gia * so_luong
     else:
@@ -446,7 +446,7 @@ def get_all_psc(page=1, per_page=5, kw=None, ngay=None):
     ).order_by(PhieuSuaChua.id.desc()).paginate(page=page, per_page=per_page)
 
 
-# dao.py
+
 def delete_psc(psc_id):
     psc = PhieuSuaChua.query.get(psc_id)
     if not psc:
@@ -536,7 +536,7 @@ def get_phieu_thanh_toan(page=1, per_page=10, kw=None, ngay=None):
 
     return query.paginate(page=page, per_page=per_page, error_out=False)
 
-# ================== THÊM HÀM LẤY GIÁ TRỊ QUY ĐỊNH ==================
+
 def lay_gia_tri_quy_dinh(ten_quy_dinh):
     qd = QuyDinh.query.filter_by(ten_quy_dinh=ten_quy_dinh).first()
     if qd and qd.noi_dung:

@@ -129,7 +129,7 @@ class PhieuSuaChua(db.Model):
         back_populates="phieu_sua_chua"
     )
 
-class ChiTietSuaChua(db.Model): # inject phieu_tiep_nhan
+class ChiTietSuaChua(db.Model):
     __tablename__ = 'chi_tiet_sua_chua'
     id = Column(Integer, primary_key=True, autoincrement=True)
     psc_id = Column(Integer, ForeignKey(PhieuSuaChua.id), nullable=False)

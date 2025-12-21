@@ -37,7 +37,7 @@
         <td>
             <a href="{{ url_for('quanly_quydinh_edit', id=qd.id) }}" class="btn btn-primary btn-sm">Chỉnh sửa</a>
 
-            <!-- Nút xóa AJAX -->
+
             <button class="btn btn-danger btn-sm"
                     onclick="deleteQuyDinh({{ qd.id }}, '{{ qd.ten_quy_dinh.label }}', '{{ qd.ten_quy_dinh.name }}')">
                 Xóa

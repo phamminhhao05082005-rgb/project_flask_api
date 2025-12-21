@@ -5,7 +5,7 @@ function deleteLinhKien(id) {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                document.getElementById(`lk${id}`).remove(); // Xóa dòng ngay lập tức
+                document.getElementById(`lk${id}`).remove();
                 alert("Xóa thành công!");
             } else {
                 alert(data.message);
