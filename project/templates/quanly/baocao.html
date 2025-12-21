@@ -52,24 +52,24 @@
                 </div>
                 <div class="col-md-2">
                     <label class="form-label fw-bold">Chọn năm</label>
-                    <input type="number" name="nam" class="form-control" value="{{ nam_chon }}" min="2020" max="2030">
+                    <input type="number" name="nam" class="form-control" value="{{ nam_chon }}" min="2000" max="3000" required>
                 </div>
                 {% else %}
                 <div class="col-md-4">
                     <label class="form-label fw-bold">Chọn năm</label>
-                    <input type="number" name="nam" class="form-control" value="{{ nam_chon }}" min="2020" max="2030">
+                    <input type="number" name="nam" class="form-control" value="{{ nam_chon }}" min="2000" max="3000" required>
                 </div>
                 {% endif %}
 
                 {% else %}
                 <div class="col-md-4">
                     <label class="form-label fw-bold">Chọn năm</label>
-                    <input type="number" name="nam" class="form-control" value="{{ nam_chon }}" min="2020" max="2030">
+                    <input type="number" name="nam" class="form-control" value="{{ nam_chon }}" min="2000" max="3000">
                 </div>
                 {% endif %}
 
                 <div class="col-md-4">
-                    <button type="submit" class="btn btn-success w-100 h-100">
+                    <button type="submit" name="action" value="view" class="btn btn-success w-100 h-100">
                         <i class="fas fa-search me-2"></i>Xem báo cáo
                     </button>
                 </div>
@@ -77,7 +77,6 @@
 
         </div>
     </div>
-
 
 
     {% if not has_submitted %}
@@ -135,33 +134,36 @@
     <nav aria-label="Page navigation">
         <ul class="pagination justify-content-center">
             <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                <a class="page-link"
-                   href="{{ url_for('quanly_baocao', page=pagination.prev_num, loai_thong_ke=loai_thong_ke, kieu_thong_ke=kieu_thong_ke, thang=thang_chon, nam=nam_chon) }}">Trước</a>
+                <a class="page-link" href="{{ url_for('quanly_baocao',page=pagination.prev_num,
+                loai_thong_ke=loai_thong_ke,kieu_thong_ke=kieu_thong_ke,
+                thang=thang_chon,nam=nam_chon,action='view') }}">Trước
+                </a>
             </li>
             {% for p in pagination.iter_pages() %}
             {% if p %}
             <li class="page-item {% if p == pagination.page %}active{% endif %}">
                 <a class="page-link"
-                   href="{{ url_for('quanly_baocao', page=p, loai_thong_ke=loai_thong_ke, kieu_thong_ke=kieu_thong_ke, thang=thang_chon, nam=nam_chon) }}">{{
-                    p }}</a>
+                   href="{{ url_for('quanly_baocao', page=p, loai_thong_ke=loai_thong_ke,
+                   kieu_thong_ke=kieu_thong_ke, thang=thang_chon, nam=nam_chon, action='view')}}">{{ p }}</a>
             </li>
             {% else %}
             <li class="page-item disabled"><span class="page-link">…</span></li>
             {% endif %}
             {% endfor %}
             <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                <a class="page-link"
-                   href="{{ url_for('quanly_baocao', page=pagination.next_num, loai_thong_ke=loai_thong_ke, kieu_thong_ke=kieu_thong_ke, thang=thang_chon, nam=nam_chon) }}">Sau</a>
+                <a class="page-link" href="{{ url_for('quanly_baocao',page=pagination.next_num,
+                loai_thong_ke=loai_thong_ke,kieu_thong_ke=kieu_thong_ke,
+                thang=thang_chon,nam=nam_chon,action='view') }}">Tiếp
+                </a>
             </li>
         </ul>
     </nav>
     {% endif %}
 
-
     {% else %}
     <div class="text-center py-5 text-muted">
         <i class="fas fa-chart-bar fa-5x mb-4 opacity-50"></i>
-        <h3>Không có dữ liệu nào về doanh thu</h3>
+        <h3>Không có dữ liệu nào về doanh thu trong năm {{ nam_chon }}</h3>
     </div>
     {% endif %}
     {% endif %}
@@ -195,7 +197,7 @@
     {% else %}
     <div class="text-center py-5 text-muted">
         <i class="fas fa-motorcycle fa-5x mb-4 opacity-50"></i>
-        <h5>Không có dữ liệu loại xe trong năm {{ nam_chon }}</h5>
+        <h5>Không có dữ liệu nào về loại xe trong năm {{ nam_chon }}</h5>
     </div>
     {% endif %}
     {% endif %}
@@ -218,7 +220,7 @@
                 <tr>
                     <td>{{ loop.index }}</td>
                     <td>{{ row[0] }}</td>
-                    <td class="text-end">{{ row[1] }}</td>
+                    <td class="text-center">{{ row[1] }}</td>
                 </tr>
                 {% endfor %}
                 </tbody>
@@ -231,14 +233,12 @@
     {% else %}
     <div class="text-center py-5 text-muted">
         <i class="fas fa-exclamation-triangle fa-5x mb-4 opacity-50"></i>
-        <h5>Không có dữ liệu lỗi trong năm {{ nam_chon }}</h5>
+        <h5>Không có dữ liệu nào về lỗi trong năm {{ nam_chon }}</h5>
     </div>
     {% endif %}
     {% endif %}
 
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {

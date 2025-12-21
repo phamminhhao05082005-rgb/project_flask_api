@@ -3,7 +3,7 @@
 {% block content %}
 <section class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="text-success">Thu ngân-Xin chào, {{ current_user.name }}</h1>
+        <h1 class="text-success">Trang thu ngân (Xin chào, {{ current_user.name }})</h1>
         <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
     </div>
 
@@ -33,7 +33,7 @@
             <th>Ngày sửa</th>
             <th>Biển số xe</th>
             <th>Khách hàng</th>
-            <th class="text-center">Tổng tiền (đã có VAT)</th>
+            <th>Tổng tiền</th>
             <th>Hành động</th>
         </tr>
         </thead>
@@ -42,9 +42,9 @@
         <tr>
             <td>{{ psc.id }}</td>
             <td>{{ psc.ngay_sua_chua.strftime('%d/%m/%Y') }}</td>
-            <td><strong>{{ psc.phieu_tiep_nhan.xe.bien_so }}</strong></td>
+            <td>{{ psc.phieu_tiep_nhan.xe.bien_so }}</td>
             <td>{{ psc.phieu_tiep_nhan.xe.khachhang.name }}</td>
-            <td class="text-end fw-bold">
+            <td class="text-end ">
                 {{ "{:,.0f}".format(psc.tong_tien) }} đ
             </td>
             <td class="text-center">
@@ -69,7 +69,6 @@
         </tbody>
     </table>
 
-    
     <nav aria-label="Page navigation">
         <ul class="pagination justify-content-center">
             <li class="page-item {% if not phieu_thanh_toan.has_prev %}disabled{% endif %}">
@@ -87,7 +86,7 @@
             {% endfor %}
             <li class="page-item {% if not phieu_thanh_toan.has_next %}disabled{% endif %}">
                 <a class="page-link"
-                   href="{{ url_for('thungan_dashboard', page=phieu_thanh_toan.next_num, kw=kw, ngay=ngay) }}">Sau</a>
+                   href="{{ url_for('thungan_dashboard', page=phieu_thanh_toan.next_num, kw=kw, ngay=ngay) }}">Tiếp</a>
             </li>
         </ul>
     </nav>

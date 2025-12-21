@@ -756,7 +756,7 @@ def quanly_baocao():
     ngay_chon = request.args.get('ngay', '').strip()
     page = request.args.get('page', 1, type=int)
 
-    has_submitted = bool(request.args)
+    has_submitted = request.args.get('action') == 'view'
 
     doanh_thu_data = []
     ty_le_xe_data = []
@@ -852,6 +852,7 @@ def quanly_baocao():
         loi_thuong_gap_data=loi_thuong_gap_data,
         has_submitted=has_submitted
     )
+
 
 if __name__ == '__main__':
     from project import admin

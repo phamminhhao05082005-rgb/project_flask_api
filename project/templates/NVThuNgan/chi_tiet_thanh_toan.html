@@ -2,7 +2,7 @@
 
 {% block content %}
 <section class="container mt-4">
-    <h1 class="text-success">Chi tiết thanh toán - Phiếu sửa chữa #{{ psc.id }}</h1>
+    <h1 class="text-success">Chi tiết thanh toán phiếu sửa chữa số {{ psc.id }}</h1>
     <a href="{{ url_for('thungan_dashboard') }}" class="btn btn-secondary mb-3">
         Quay lại danh sách
     </a>
@@ -15,7 +15,7 @@
 
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <strong>Thông tin khách hàng & xe</strong>
+                    <strong>Thông tin phiếu</strong>
                 </div>
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item"><strong>Khách hàng:</strong> {{ psc.phieu_tiep_nhan.xe.khachhang.name }}
@@ -34,14 +34,14 @@
 
 
             <div class="card mt-4">
-                <div class="card-header bg-warning text-dark">
-                    <strong>Chi tiết linh kiện & công sửa</strong>
+                <div class="card-header bg-primary text-white">
+                    <strong>Chi tiết tiền linh kiện</strong>
                 </div>
                 <table class="table table-sm">
                     <thead>
                     <tr>
-                        <th>Linh kiện/Dịch vụ</th>
-                        <th>SL</th>
+                        <th>Tên linh kiện</th>
+                        <th>Số lượng</th>
                         <th>Đơn giá linh kiện</th>
                         <th>Tiền công</th>
                         <th>Thành tiền</th>
@@ -71,17 +71,19 @@
                 </div>
                 <div class="card-body">
                     <hr>
-                    <h4 class="text-danger">Tổng tiền (đã có VAT):
+                    <h4 class="text-dark">Tổng tiền (đã có VAT):
                         <span class="float-end fw-bold">{{ "{:,.0f}".format(tong_that) }} đ</span>
                     </h4>
 
                     <div class="text-center mt-4">
                         {% if not psc.phieu_thanh_toan or not psc.phieu_thanh_toan.da_thanh_toan %}
                         <form action="{{ url_for('thungan_xacnhan_thanh_toan', psc_id=psc.id) }}" method="POST">
-                            <button type="submit" class="btn btn-success btn-lg px-5">
+                            <button type="submit" class="btn btn-success btn-lg px-5"
+                                    onclick="return confirm('Bạn có chắc chắn muốn xác nhận thanh toán không?')">
                                 <i class="bi bi-cash-coin"></i> Xác nhận thanh toán
                             </button>
                         </form>
+
                         {% else %}
                         <button class="btn btn-secondary btn-lg px-5" disabled>
                             <i class="bi bi-check-circle-fill"></i> Đã thanh toán thành công
@@ -105,7 +107,7 @@
 
 {% if psc.phieu_thanh_toan and psc.phieu_thanh_toan.da_thanh_toan %}
 <div class="modal fade" id="hoaDonModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white text-center">
                 <h4 class="modal-title w-100 fw-bold">HÓA ĐƠN #{{ "%05d"|format(psc.phieu_thanh_toan.id) }}</h4>
@@ -129,51 +131,49 @@
                     <thead>
                     <tr>
                         <th class="text-center">STT</th>
-                        <th>Hạng mục</th>
-                        <th class="text-center">SL</th>
-                        <th class="text-end">Đơn giá</th>
-                        <th class="text-end">Tiền công</th>
-                        <th class="text-end">Thành tiền</th>
+                        <th class="text-center">Hạng mục</th>
+                        <th class="text-center">Số lượng</th>
+                        <th class="text-center">Đơn giá</th>
+                        <th class="text-center">Tiền công</th>
+                        <th class="text-center">Thành tiền</th>
                     </tr>
                     </thead>
                     <tbody>
                     {% for ct in psc.chi_tiet_sua_chuas %}
                     <tr>
                         <td class="text-center">{{ loop.index }}</td>
-                        <td>{{ ct.linh_kien.ten_linh_kien }}</td>
+                        <td class="text-center">{{ ct.linh_kien.ten_linh_kien }}</td>
                         <td class="text-center">{{ ct.so_luong }}</td>
-                        <td class="text-end">{{ "{:,.0f}".format(ct.don_gia * ct.so_luong) }}</td>
-                        <td class="text-end">{{ "{:,.0f}".format(ct.linh_kien.tien_cong * ct.so_luong) }}</td>
-                        <td class="text-end fw-bold">{{ "{:,.0f}".format((ct.don_gia + ct.linh_kien.tien_cong) *
-                            ct.so_luong) }}
+                        <td class="text-center">{{ "{:,.0f}".format(ct.don_gia * ct.so_luong) }} đ</td>
+                        <td class="text-center">{{ "{:,.0f}".format(ct.linh_kien.tien_cong * ct.so_luong) }} đ</td>
+                        <td class="text-center">{{ "{:,.0f}".format((ct.don_gia + ct.linh_kien.tien_cong) *
+                            ct.so_luong) }} đ
                         </td>
                     </tr>
                     {% endfor %}
                     </tbody>
                     <tfoot>
-
                     {% set vat_he_so = vat_rate / 100 %}
 
                     {% set tong_truoc_vat = tong_that / (1 + vat_he_so) %}
 
-                    {# VAT tiền #}
                     {% set vat_tien = tong_that - tong_truoc_vat %}
 
                     <tr class="table-light text-black">
-                        <td colspan="5" class="text-end fw-bold fs-6">Tổng tiền trước VAT:</td>
-                        <td class="text-end">{{ "{:,.0f}".format(tong_truoc_vat) }}</td>
+                        <td colspan="5" class="text-center fw-bold fs-6">Tổng tiền:</td>
+                        <td class="text-center">{{ "{:,.0f}".format(tong_truoc_vat) }} đ</td>
                     </tr>
 
                     <tr class="table-light text-black">
-                        <td colspan="5" class="text-end fw-bold fs-6">
+                        <td colspan="5" class="text-center fw-bold fs-6">
                             Thuế VAT {{ vat_rate }}%:
                         </td>
-                        <td class="text-end">{{ "{:,.0f}".format(vat_tien) }}</td>
+                        <td class="text-center">{{ "{:,.0f}".format(vat_tien) }} đ</td>
                     </tr>
 
                     <tr class="table-primary text-black">
-                        <td colspan="5" class="text-end fw-bold fs-5">Tổng cộng (đã gồm VAT):</td>
-                        <td class="text-end fs-3">{{ "{:,.0f}".format(tong_that) }}</td>
+                        <td colspan="5" class="text-center fw-bold fs-5">Tổng cộng (đã gồm VAT):</td>
+                        <td class="text-center fw-bold fs-3">{{ "{:,.0f}".format(tong_that) }} đ</td>
                     </tr>
                     </tfoot>
 
