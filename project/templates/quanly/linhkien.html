@@ -124,11 +124,11 @@ async function deleteLinhKien(id) {
     const flashBox = document.getElementById("flash-box");
 
     if (res.ok) {
-        // Xóa dòng trong bảng
+
         const row = document.getElementById("row-" + id);
         if (row) row.remove();
 
-        // Hiển thị flash thành công
+
         flashBox.innerHTML = `
             <div class="alert alert-success alert-dismissible fade show mt-2" role="alert">
                 ${data.message || "Xóa thành công!"}
@@ -136,7 +136,7 @@ async function deleteLinhKien(id) {
             </div>
         `;
     } else {
-        // Hiển thị flash lỗi
+
         flashBox.innerHTML = `
             <div class="alert alert-danger alert-dismissible fade show mt-2" role="alert">
                 ${data.message || "Có lỗi xảy ra khi xóa!"}

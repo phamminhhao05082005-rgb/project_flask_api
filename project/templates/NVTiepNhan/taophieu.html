@@ -164,14 +164,14 @@
         const sdtInput = document.getElementById('customer_sdt');
         const form = document.getElementById('phieuForm');
 
-        // Chỉ cho nhập số, giới hạn 10 ký tự
+
         sdtInput.addEventListener('input', function() {
             this.value = this.value.replace(/\D/g, '');
             if (this.value.length > 10)
                 this.value = this.value.slice(0, 10);
         });
 
-        // Kiểm tra ít nhất 1 lỗi
+
         form.addEventListener('submit', function(e) {
             const checkboxes = document.querySelectorAll('.loi-checkbox');
             const checked = Array.from(checkboxes).some(cb => cb.checked);

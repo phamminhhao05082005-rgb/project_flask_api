@@ -202,11 +202,10 @@ def suachua_dashboard():
     if check:
         return check
 
-    # Phiếu chờ sửa
     kw_cho = request.args.get('kw_cho', '')
     ngay_cho = request.args.get('ngay_cho', '')
 
-    # phiếu dg sửa/ đã sửa
+
     kw = request.args.get('kw', '')
     ngay = request.args.get('ngay', '')
 
@@ -324,7 +323,7 @@ def suachua_xac_nhan(psc_id):
 @app.route('/thungan')
 @login_required
 def thungan_dashboard():
-    # Kiểm tra role
+
     check = check_role(RoleEnum.THUNGAN)
     if check:
         return check
@@ -338,7 +337,7 @@ def thungan_dashboard():
     for psc in phieu_thanh_toan_pagination.items:
         pt = PhieuThanhToan.query.filter_by(phieu_sua_chua_id=psc.id).first()
         if pt:
-            psc.da_thanh_toan = pt.da_thanh_toan  # Lấy cờ thanh toán từ phiếu thanh toán
+            psc.da_thanh_toan = pt.da_thanh_toan
             psc.tong_tien = pt.tong_tien
         else:
             psc.da_thanh_toan = False

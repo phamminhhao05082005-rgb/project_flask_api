@@ -220,7 +220,7 @@ if __name__ == "__main__":
         qd2 = QuyDinh(ten_quy_dinh=TenQuyDinhEnum.THUE_VAT, noi_dung="10", quanly_id=ql.id)
         db.session.add_all([qd1, qd2])
 
-        #hm
+
         hm_list = [
             ("Bugi", "Bugi xe máy, ô tô",ql.id),
             ("Nhớt", "Dầu nhớt động cơ",ql.id),
@@ -247,7 +247,7 @@ if __name__ == "__main__":
 
         db.session.commit()
 
-        #lk
+
         linh_kien_list = [
             ("Bugi Denso", 200000, 50000,100, "Bugi"),
             ("Bugi Iridium", 250000, 45000,100, "Bugi"),
@@ -346,7 +346,7 @@ if __name__ == "__main__":
 
         db.session.commit()
 
-        # kh
+
         khach_hang_list = [
             ("Nguyen Van A", "0909000001"),
             ("Tran Thi B", "0909000002"),
@@ -367,7 +367,7 @@ if __name__ == "__main__":
             kh_objects.append(kh)
         db.session.commit()
 
-        # xe
+
         xe_objects = []
         loai_xe_list = [LoaiXe.XE_MAY, LoaiXe.O_TO, LoaiXe.SUV, LoaiXe.Sedan, LoaiXe.XE_TAI]
 
@@ -381,7 +381,7 @@ if __name__ == "__main__":
             xe_objects.append(xe)
         db.session.commit()
 
-        # 20 phieu tn
+
         ptn_list = []
         descriptions = [
             "Kiểm tra tổng thể", "Bảo dưỡng định kỳ", "Sửa phanh", "Thay dầu nhớt",
@@ -401,7 +401,7 @@ if __name__ == "__main__":
 
         db.session.commit()
 
-        # gan loi cho 20 phieu tn
+
         loi_list = db.session.query(Loi).all()
 
         for i, ptn in enumerate(ptn_list):
@@ -411,7 +411,7 @@ if __name__ == "__main__":
 
         db.session.commit()
 
-        # 10 phieu dang sc
+
         psc_list = []
 
         for i, ptn in enumerate(ptn_list[:10]):
@@ -426,7 +426,7 @@ if __name__ == "__main__":
 
         db.session.commit()
 
-        # 10 ct phieu dang sc
+
         linh_kien_all = db.session.query(LinhKien).all()
 
         for i, psc in enumerate(psc_list):
@@ -466,7 +466,7 @@ if __name__ == "__main__":
 
         db.session.commit()
 
-        # chi tiet sua chua
+
         for i, psc in enumerate(psc_done_list):
             ct1 = ChiTietSuaChua(
                 psc_id=psc.id,
@@ -484,7 +484,7 @@ if __name__ == "__main__":
 
         db.session.commit()
 
-        # phieu thanh toan
+
         ngay_tt_list = [
             date(2025, 10, 6),
             date(2025, 10, 21),

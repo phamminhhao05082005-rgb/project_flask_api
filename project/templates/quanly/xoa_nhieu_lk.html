@@ -92,7 +92,7 @@
 </form>
 
 <script>
-    // Lưu checkbox đã chọn trong sessionStorage
+
     function updateCheckedStorage() {
         let checkedIds = JSON.parse(sessionStorage.getItem('checkedIds') || "[]");
 
@@ -109,7 +109,7 @@
         updateSelectAllCheckbox();
     }
 
-    // Tick lại checkbox khi load trang
+
     function restoreChecked() {
         const checkedIds = JSON.parse(sessionStorage.getItem('checkedIds') || "[]");
         document.querySelectorAll('#deleteForm input[name="ids"]').forEach(cb => {
@@ -118,7 +118,7 @@
         updateSelectAllCheckbox();
     }
 
-    // Cập nhật trạng thái nút Chọn tất cả
+
     function updateSelectAllCheckbox() {
         const allCheckbox = document.getElementById('selectAll');
         if (allCheckbox) {
@@ -128,7 +128,7 @@
         }
     }
 
-    // Chọn tất cả checkbox trên trang
+
     function toggleAll(source) {
         document.querySelectorAll('#deleteForm input[name="ids"]').forEach(cb => {
             cb.checked = source.checked;
@@ -136,7 +136,7 @@
         updateCheckedStorage();
     }
 
-    // Event listener
+
     document.addEventListener('DOMContentLoaded', () => {
         restoreChecked();
         document.querySelectorAll('#deleteForm input[name="ids"]').forEach(cb => {
@@ -146,7 +146,7 @@
         if (selectAll) selectAll.addEventListener('click', () => toggleAll(selectAll));
     });
 
-    // Khi submit form xóa, thêm tất cả checkbox đã tick vào form
+
     document.getElementById('deleteForm').addEventListener('submit', function(e){
         const checkedIds = JSON.parse(sessionStorage.getItem('checkedIds') || "[]");
 

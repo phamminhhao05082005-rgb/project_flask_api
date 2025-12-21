@@ -22,7 +22,7 @@ def get_user_by_id(id):
     return NhanVienBase.query.get(id)
 
 
-# cac ham thao tac voi linh kien
+
 def get_linhkien_paginate(page=1, per_page=5, hangmuc_id=None, keyword=None):
     query = LinhKien.query
 
@@ -94,7 +94,7 @@ def get_all_hangmuc():
     return HangMuc.query.all()
 
 
-# cac ham thao tac voi quy dinh
+
 from models import QuyDinh
 
 
@@ -136,7 +136,7 @@ def get_all_linh_kien():
     return LinhKien.query.all()
 
 
-# cac ham thao tac voi hang muc
+
 
 def get_quydinh_paginate(page=1, per_page=5, keyword=None):
     query = QuyDinh.query
@@ -145,7 +145,7 @@ def get_quydinh_paginate(page=1, per_page=5, keyword=None):
     return query.order_by(QuyDinh.id.asc()).paginate(page=page, per_page=per_page)
 
 
-#  cac thao tac voi hang muc
+
 def get_all_hangmuc():
     return HangMuc.query.all()
 
@@ -214,7 +214,7 @@ def is_name_unique(model_class, name, exclude_id=None, field_name=None, extra_fi
     return query.first() is None
 
 
-# cac ham thao tac voi loi
+
 def get_all_loi():
     return Loi.query.all()
 
@@ -231,19 +231,18 @@ def get_loi_paginate(page=1, per_page=5):
     return Loi.query.order_by(Loi.id.asc()).paginate(page=page, per_page=per_page)
 
 
-# cac thao tac voi xe
+
 def get_xe_by_bien_so(bien_so):
     return Xe.query.options(joinedload(Xe.khachhang)).filter_by(bien_so=bien_so).first()
 
 
-# cac ham thao tac voi phieu tiep nhan
 def create_phieu_tiep_nhan(data, nvtn_id):
     with db.session.begin_nested():
         kh = KhachHang.query.filter_by(sdt=data['customer_sdt']).first()
         if not kh:
             kh = KhachHang(name=data['customer_name'], sdt=data['customer_sdt'])
             db.session.add(kh)
-            db.session.flush()  # lay san id cua kh. Chua permanent, chi la temporary
+            db.session.flush()
 
 
         xe = get_xe_by_bien_so(data['xe_bien_so'])
@@ -254,7 +253,7 @@ def create_phieu_tiep_nhan(data, nvtn_id):
                 khachhang_id=kh.id
             )
             db.session.add(xe)
-            db.session.flush()  # lay san id cua xe
+            db.session.flush()
 
 
         ptn = PhieuTiepNhan(
@@ -265,7 +264,7 @@ def create_phieu_tiep_nhan(data, nvtn_id):
         db.session.add(ptn)
         db.session.flush()
 
-        # chi tiet loi
+
         for loi_id in data['loi_ids']:
             ptn_loi = Ptn_loi(
                 ptn_id=ptn.id,
@@ -348,18 +347,6 @@ def get_quy_dinh_sl_xe_nhan():
 def count_phieu_tiep_nhan_today():
     return PhieuTiepNhan.query.filter_by(ngay_tiep_nhan=date.today()).count()
 
-
-# def get_phieu_tiep_nhan_1():
-#     ptns = PhieuTiepNhan.query.all()
-#     res = []
-#     for ptn in ptns:
-#         bien_so = ptn.xe.bien_so
-#         cus_name = ptn.xe.khachhang_id.name
-#         res.append(f"{ptn.id} - {bien_so} - {cus_name}")
-#     return res
-
-
-# cac ham thao tac voi phieu sua chua
 
 def get_ptn_cho_psc(page=1, per_page=5, kw=None, ngay=None):
     query = PhieuTiepNhan.query.filter(
@@ -493,13 +480,10 @@ def xac_nhan(psc_id):
     return psc
 
 
-# cac ham thao tac voi khach hang
 def get_kh_by_sdt(sdt):
     return KhachHang.query.filter_by(sdt=sdt).first()
 
 
-#====================================================
-#Ham dung de tinh tong chi phi sua xe
 def tinh_tong_tien_phieu_sua_chua(psc_id):
     psc = PhieuSuaChua.query.get(psc_id)
     if not psc:
@@ -722,7 +706,7 @@ def revenue_by_day_in_month_paginated(year=None, month=None, page=1, per_page=7)
         total = data_dict.get(day, 0)
         all_data.append((day, total))
 
-    # Tạo pagination object
+
     class SimplePagination:
         def __init__(self, items, page, per_page, total):
             self.items = items
