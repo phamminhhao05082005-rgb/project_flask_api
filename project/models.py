@@ -387,8 +387,8 @@ if __name__ == "__main__":
         for i in range(20):
             ptn = PhieuTiepNhan(
                 nvtn_id=tn.id,
-                xe_id=xe_objects[i % len(xe_objects)].id,  # vòng lại từ 0 - 9
-                ngay_tiep_nhan=date(2025, 11, 20 + (i % 10)),  # tránh lỗi ngày > 30
+                xe_id=xe_objects[i % len(xe_objects)].id,
+                ngay_tiep_nhan=date(2025, 11, 20 + (i % 10)),
                 description=descriptions[i % 10]
             )
             db.session.add(ptn)

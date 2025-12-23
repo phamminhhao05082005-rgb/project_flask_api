@@ -285,7 +285,6 @@ def suachua_delete_item(ctsc_id):
 @app.route('/suachua/xacnhan/<int:psc_id>', methods=['POST'])
 @login_required
 def suachua_xac_nhan(psc_id):
-    # kiểm tra quyền
     check = check_role(RoleEnum.SUACHUA)
     if check:
         flash("Bạn không có quyền thực hiện hành động này.", "danger")

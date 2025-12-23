@@ -75,8 +75,6 @@ def delete_linhkien(id):
     return True
 def get_all_linh_kien():
     return LinhKien.query.all()
-# def get_all_hangmuc():
-#     return HangMuc.query.all()
 
 from models import QuyDinh
 def get_quydinh_paginate(page=1, per_page=5):
@@ -103,9 +101,6 @@ def delete_quydinh(id):
     db.session.delete(qd)
     db.session.commit()
     return True
-#
-# def get_all_linh_kien():
-#     return LinhKien.query.all()
 def get_quydinh_paginate(page=1, per_page=5, keyword=None):
     query = QuyDinh.query
     if keyword:
