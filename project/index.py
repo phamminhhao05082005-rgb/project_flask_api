@@ -735,7 +735,6 @@ def quanly_baocao():
 
     return render_template('quanly/baocao.html', **context)
 
-
 if __name__ == '__main__':
     from project import admin
     from init import app
