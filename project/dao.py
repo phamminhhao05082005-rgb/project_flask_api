@@ -16,11 +16,8 @@ def auth_user(username, password):
     password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
     return NhanVienBase.query.filter(NhanVienBase.username == username.strip(),
                                      NhanVienBase.password == password).first()
-
-
 def get_user_by_id(id):
     return NhanVienBase.query.get(id)
-
 
 
 def get_linhkien_paginate(page=1, per_page=5, hangmuc_id=None, keyword=None):
@@ -33,12 +30,8 @@ def get_linhkien_paginate(page=1, per_page=5, hangmuc_id=None, keyword=None):
         query = query.filter(LinhKien.ten_linh_kien.contains(keyword))
 
     return query.order_by(LinhKien.id.asc()).paginate(page=page, per_page=per_page)
-
-
 def get_linhkien_by_id(id):
     return LinhKien.query.get(id)
-
-
 def create_linhkien(ten, gia, tien_cong,so_luong, hangmuc_id, quanly_id):
     if not is_name_unique(LinhKien, ten, field_name='ten_linh_kien'):
         query = LinhKien.query.filter_by(ten_linh_kien=ten.strip(), hangmuc_id=hangmuc_id)
@@ -57,8 +50,6 @@ def create_linhkien(ten, gia, tien_cong,so_luong, hangmuc_id, quanly_id):
     db.session.add(lk)
     db.session.commit()
     return True, "Tạo linh kiện thành công!"
-
-
 def update_linhkien(id, ten, gia, tien_cong,so_luong, hangmuc_id):
     lk = get_linhkien_by_id(id)
     if not lk:
@@ -75,8 +66,6 @@ def update_linhkien(id, ten, gia, tien_cong,so_luong, hangmuc_id):
     lk.hangmuc_id = hangmuc_id
     db.session.commit()
     return True, "Cập nhật linh kiện thành công"
-
-
 def delete_linhkien(id):
     lk = get_linhkien_by_id(id)
     if not lk:
@@ -84,35 +73,21 @@ def delete_linhkien(id):
     db.session.delete(lk)
     db.session.commit()
     return True
-
-
 def get_all_linh_kien():
     return LinhKien.query.all()
-
-
-def get_all_hangmuc():
-    return HangMuc.query.all()
-
-
+# def get_all_hangmuc():
+#     return HangMuc.query.all()
 
 from models import QuyDinh
-
-
 def get_quydinh_paginate(page=1, per_page=5):
     return QuyDinh.query.paginate(page=page, per_page=per_page)
-
-
 def get_quydinh_by_id(id):
     return QuyDinh.query.get(id)
-
-
 def create_quydinh(ten_quy_dinh, noi_dung, quanly_id):
     qd = QuyDinh(ten_quy_dinh=ten_quy_dinh, noi_dung=noi_dung, quanly_id=quanly_id)
     db.session.add(qd)
     db.session.commit()
     return qd
-
-
 def update_quydinh(id, ten_quy_dinh, noi_dung):
     qd = get_quydinh_by_id(id)
     if not qd:
@@ -121,8 +96,6 @@ def update_quydinh(id, ten_quy_dinh, noi_dung):
     qd.noi_dung = noi_dung
     db.session.commit()
     return qd
-
-
 def delete_quydinh(id):
     qd = get_quydinh_by_id(id)
     if not qd:
@@ -130,14 +103,9 @@ def delete_quydinh(id):
     db.session.delete(qd)
     db.session.commit()
     return True
-
-
-def get_all_linh_kien():
-    return LinhKien.query.all()
-
-
-
-
+#
+# def get_all_linh_kien():
+#     return LinhKien.query.all()
 def get_quydinh_paginate(page=1, per_page=5, keyword=None):
     query = QuyDinh.query
     if keyword:
@@ -145,15 +113,10 @@ def get_quydinh_paginate(page=1, per_page=5, keyword=None):
     return query.order_by(QuyDinh.id.asc()).paginate(page=page, per_page=per_page)
 
 
-
 def get_all_hangmuc():
     return HangMuc.query.all()
-
-
 def get_hangmuc_by_id(id):
     return HangMuc.query.get(id)
-
-
 def create_hangmuc(ten, quanly_id, mo_ta=None):
     hm = HangMuc(
         ten_hang_muc=ten,
@@ -162,15 +125,11 @@ def create_hangmuc(ten, quanly_id, mo_ta=None):
     )
     db.session.add(hm)
     db.session.commit()
-
-
 def update_hangmuc(id, ten):
     hm = get_hangmuc_by_id(id)
     if hm:
         hm.ten_hang_muc = ten
         db.session.commit()
-
-
 def delete_hangmuc(id):
     hm = get_hangmuc_by_id(id)
     if hm:
@@ -179,19 +138,13 @@ def delete_hangmuc(id):
         db.session.delete(hm)
         db.session.commit()
         return True, "Xóa hạng mục thành công!"
-
-
 def get_hangmuc_paginate(page=1, per_page=5, keyword=None):
     query = HangMuc.query
     if keyword:
         query = query.filter(HangMuc.ten_hang_muc.contains(keyword))
     return query.order_by(HangMuc.id.asc()).paginate(page=page, per_page=per_page)
-
-
 def get_hangmuc_by_id(hangmuc_id):
     return HangMuc.query.get(hangmuc_id)
-
-
 def is_name_unique(model_class, name, exclude_id=None, field_name=None, extra_filter=None):
     if field_name is None:
         if model_class.__name__ == "LinhKien":
@@ -214,28 +167,31 @@ def is_name_unique(model_class, name, exclude_id=None, field_name=None, extra_fi
     return query.first() is None
 
 
-
 def get_all_loi():
     return Loi.query.all()
-
-
 def get_loi_by_id(id):
     return Loi.query.get(id)
-
-
 def get_loi_by_name(name):
     return Loi.query.filter_by(ten_loi=name).first()
-
-
 def get_loi_paginate(page=1, per_page=5):
     return Loi.query.order_by(Loi.id.asc()).paginate(page=page, per_page=per_page)
 
 
-
 def get_xe_by_bien_so(bien_so):
     return Xe.query.options(joinedload(Xe.khachhang)).filter_by(bien_so=bien_so).first()
+def get_all_phieu_tiep_nhan(page=1, per_page=5, kw=None, ngay=None):
+    query = PhieuTiepNhan.query
 
+    if kw:
+        query = query.join(Xe).filter(Xe.bien_so.contains(kw))
+    if ngay:
+        query = query.filter(PhieuTiepNhan.ngay_tiep_nhan == ngay)
 
+    return query.options(
+        joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
+        joinedload(PhieuTiepNhan.nhan_vien_tiep_nhan),
+        joinedload(PhieuTiepNhan.lois)
+    ).order_by(PhieuTiepNhan.ngay_tiep_nhan.desc()).paginate(page=page, per_page=per_page)
 def create_phieu_tiep_nhan(data, nvtn_id):
     with db.session.begin_nested():
         kh = KhachHang.query.filter_by(sdt=data['customer_sdt']).first()
@@ -273,30 +229,11 @@ def create_phieu_tiep_nhan(data, nvtn_id):
             db.session.add(ptn_loi)
 
     db.session.commit()
-
-
-def get_all_phieu_tiep_nhan(page=1, per_page=5, kw=None, ngay=None):
-    query = PhieuTiepNhan.query
-
-    if kw:
-        query = query.join(Xe).filter(Xe.bien_so.contains(kw))
-    if ngay:
-        query = query.filter(PhieuTiepNhan.ngay_tiep_nhan == ngay)
-
-    return query.options(
-        joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
-        joinedload(PhieuTiepNhan.nhan_vien_tiep_nhan),
-        joinedload(PhieuTiepNhan.lois)
-    ).order_by(PhieuTiepNhan.ngay_tiep_nhan.desc()).paginate(page=page, per_page=per_page)
-
-
 def get_phieu_tiep_nhan_by_id(id):
     return PhieuTiepNhan.query.options(
         joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
         joinedload(PhieuTiepNhan.lois)
     ).get(id)
-
-
 def update_phieu_tiep_nhan(id, new_loi_ids, description=None):
     ptn = get_phieu_tiep_nhan_by_id(id)
     if not ptn:
@@ -312,8 +249,6 @@ def update_phieu_tiep_nhan(id, new_loi_ids, description=None):
             ptn.lois.append(loi)
     db.session.commit()
     return ptn
-
-
 def delete_phieu_tiep_nhan(id):
     ptn = PhieuTiepNhan.query.get(id)
     if ptn:
@@ -321,33 +256,26 @@ def delete_phieu_tiep_nhan(id):
         db.session.commit()
         return True
     return False
+def get_quy_dinh_sl_xe_nhan():
+    qd = QuyDinh.query.filter_by(ten_quy_dinh=TenQuyDinhEnum.SL_XE_NHAN).first()
+    return int(qd.noi_dung) if qd else None
+def count_phieu_tiep_nhan_today():
+    return PhieuTiepNhan.query.filter_by(ngay_tiep_nhan=date.today()).count()
+
 
 def check_start_sc(ptn_id):
     psc = PhieuSuaChua.query.filter_by(ptn_id=ptn_id).first()
     return psc is not None
-
 def is_phieu_sc_confirmed(ptn_id):
     psc = PhieuSuaChua.query.filter_by(ptn_id=ptn_id).first()
     if not psc:
         return False
     return psc.da_xac_nhan is True
-
 def is_phieu_sc_in_progress(ptn_id):
     psc = PhieuSuaChua.query.filter_by(ptn_id=ptn_id).first()
     if not psc:
         return False
-
     return psc.da_xac_nhan != True
-
-def get_quy_dinh_sl_xe_nhan():
-    qd = QuyDinh.query.filter_by(ten_quy_dinh=TenQuyDinhEnum.SL_XE_NHAN).first()
-    return int(qd.noi_dung) if qd else None
-
-
-def count_phieu_tiep_nhan_today():
-    return PhieuTiepNhan.query.filter_by(ngay_tiep_nhan=date.today()).count()
-
-
 def get_ptn_cho_psc(page=1, per_page=5, kw=None, ngay=None):
     query = PhieuTiepNhan.query.filter(
         ~PhieuTiepNhan.phieu_sua_chuas.any()
@@ -363,8 +291,6 @@ def get_ptn_cho_psc(page=1, per_page=5, kw=None, ngay=None):
         joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
         joinedload(PhieuTiepNhan.lois)
     ).order_by(PhieuTiepNhan.ngay_tiep_nhan.desc()).paginate(page=page, per_page=per_page)
-
-
 def create_psc(ptn_id, nvsc_id):
     ton_tai_psc = PhieuSuaChua.query.filter_by(ptn_id=ptn_id).first()
     if ton_tai_psc:
@@ -374,16 +300,6 @@ def create_psc(ptn_id, nvsc_id):
     db.session.add(psc)
     db.session.commit()
     return psc
-
-
-def get_psc_by_id(psc_id):
-    return PhieuSuaChua.query.options(
-        joinedload(PhieuSuaChua.chi_tiet_sua_chuas).joinedload(ChiTietSuaChua.linh_kien),
-        joinedload(PhieuSuaChua.phieu_tiep_nhan).joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
-        joinedload(PhieuSuaChua.phieu_tiep_nhan).joinedload(PhieuTiepNhan.lois),
-    ).get(psc_id)
-
-
 def add_lk_to_psc(psc_id, linh_kien_id, so_luong):
     psc = get_psc_by_id(psc_id)
     if not psc:
@@ -417,8 +333,12 @@ def add_lk_to_psc(psc_id, linh_kien_id, so_luong):
 
     db.session.commit()
     return True, "Thêm linh kiện thành công"
-
-
+def get_psc_by_id(psc_id):
+    return PhieuSuaChua.query.options(
+        joinedload(PhieuSuaChua.chi_tiet_sua_chuas).joinedload(ChiTietSuaChua.linh_kien),
+        joinedload(PhieuSuaChua.phieu_tiep_nhan).joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
+        joinedload(PhieuSuaChua.phieu_tiep_nhan).joinedload(PhieuTiepNhan.lois),
+    ).get(psc_id)
 def get_all_psc(page=1, per_page=5, kw=None, ngay=None):
     query = PhieuSuaChua.query
 
@@ -431,9 +351,6 @@ def get_all_psc(page=1, per_page=5, kw=None, ngay=None):
         joinedload(PhieuSuaChua.phieu_tiep_nhan).joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
         joinedload(PhieuSuaChua.nhan_vien_sua_chua)
     ).order_by(PhieuSuaChua.id.desc()).paginate(page=page, per_page=per_page)
-
-
-
 def delete_psc(psc_id):
     psc = PhieuSuaChua.query.get(psc_id)
     if not psc:
@@ -448,7 +365,6 @@ def delete_psc(psc_id):
     db.session.delete(psc)
     db.session.commit()
     return True, "Xóa phiếu thành công"
-
 def delete_chitiet_psc(ctsc_id):
     ctsc = ChiTietSuaChua.query.get(ctsc_id)
     if not ctsc:
@@ -468,9 +384,6 @@ def delete_chitiet_psc(ctsc_id):
     db.session.commit()
 
     return True, "Đã xóa chi tiết phiếu thành công"
-
-
-
 def xac_nhan(psc_id):
     psc = PhieuSuaChua.query.get(psc_id)
     if not psc:
@@ -482,8 +395,6 @@ def xac_nhan(psc_id):
 
 def get_kh_by_sdt(sdt):
     return KhachHang.query.filter_by(sdt=sdt).first()
-
-
 def tinh_tong_tien_phieu_sua_chua(psc_id):
     psc = PhieuSuaChua.query.get(psc_id)
     if not psc:
@@ -505,7 +416,6 @@ def tinh_tong_tien_phieu_sua_chua(psc_id):
     tong_sau_thue = tong_truoc_thue * (1 + vat)
 
     return round(tong_sau_thue)
-
 def get_phieu_thanh_toan(page=1, per_page=10, kw=None, ngay=None):
     query = PhieuSuaChua.query.filter_by(da_xac_nhan=True) \
         .order_by(PhieuSuaChua.ngay_sua_chua.desc())
@@ -519,8 +429,6 @@ def get_phieu_thanh_toan(page=1, per_page=10, kw=None, ngay=None):
         query = query.filter(PhieuSuaChua.ngay_sua_chua == ngay)
 
     return query.paginate(page=page, per_page=per_page, error_out=False)
-
-
 def lay_gia_tri_quy_dinh(ten_quy_dinh):
     qd = QuyDinh.query.filter_by(ten_quy_dinh=ten_quy_dinh).first()
     if qd and qd.noi_dung:
@@ -529,8 +437,6 @@ def lay_gia_tri_quy_dinh(ten_quy_dinh):
         except:
             return 0.1
     return 0.1
-
-
 def tao_phieu_thanh_toan(phieu_sua_chua_id, tong_tien, thu_ngan_id):
     pt = PhieuThanhToan(
         phieu_sua_chua_id=phieu_sua_chua_id,
@@ -557,8 +463,6 @@ def revenue_by_specific_date(date_str):
     )
 
     return result or 0
-
-
 def revenue_by_day_in_month(year=None, month=None):
     from calendar import monthrange
 
@@ -589,8 +493,6 @@ def revenue_by_day_in_month(year=None, month=None):
         result.append((day, total))
 
     return result
-
-
 def revenue_by_month(year=None):
     if year is None:
         year = datetime.now().year
@@ -613,8 +515,6 @@ def revenue_by_month(year=None):
         result.append((month, total))
 
     return result
-
-
 def revenue_by_quarter(year=None):
     if year is None:
         year = datetime.now().year
@@ -637,8 +537,6 @@ def revenue_by_quarter(year=None):
         result.append((quarter, total))
 
     return result
-
-
 def ty_le_loai_xe_by_year(year=None):
     if year is None:
         year = datetime.now().year
@@ -654,8 +552,6 @@ def ty_le_loai_xe_by_year(year=None):
                 .order_by(func.count(PhieuTiepNhan.id).desc())
                 .all()
             )
-
-
 def top_loi_thuong_gap_by_year(year=None, limit=10):
     if year is None:
         year = datetime.now().year
@@ -674,8 +570,6 @@ def top_loi_thuong_gap_by_year(year=None, limit=10):
         .limit(limit)
         .all()
     )
-
-
 def revenue_by_day_in_month_paginated(year=None, month=None, page=1, per_page=7):
 
     from calendar import monthrange
