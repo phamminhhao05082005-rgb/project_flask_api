@@ -4,7 +4,7 @@
 <section class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="text-success">Trang thu ngân (Xin chào, {{ current_user.name }})</h1>
-        <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+        <a href="{{ url_for('logout') }}" class="btn btn-danger">Đăng xuất</a>
     </div>
 
     {% include 'layout/flash_messages.html' %}
@@ -51,12 +51,12 @@
                 {% if not psc.da_thanh_toan %}
                 <a href="{{ url_for('thungan_chi_tiet', psc_id=psc.id) }}"
                    class="btn btn-success btn-sm">
-                    Xác nhận thanh toán
+                    Xem chi tiết phiếu chưa thanh toán
                 </a>
                 {% else %}
                 <a href="{{ url_for('thungan_chi_tiet', psc_id=psc.id) }}"
                    class="btn text-white btn-primary">
-                    Xem chi tiết phiếu
+                    Xem chi tiết phiếu đã thanh toán
                 </a>
                 {% endif %}
             </td>
