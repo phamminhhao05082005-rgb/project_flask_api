@@ -755,103 +755,37 @@ def quanly_baocao():
     thang_chon = request.args.get('thang', datetime.now().month, type=int)
     ngay_chon = request.args.get('ngay', '').strip()
     page = request.args.get('page', 1, type=int)
-
     has_submitted = request.args.get('action') == 'view'
 
-    doanh_thu_data = []
-    ty_le_xe_data = []
-    loi_thuong_gap_data = []
-    tong_doanh_thu = 0
-    tieu_de_thong_ke = ""
-    pagination = None
+    context = {
+        'loai_thong_ke': loai_thong_ke,
+        'kieu_thong_ke': kieu_thong_ke,
+        'nam_chon': nam_chon,
+        'thang_chon': thang_chon,
+        'ngay_chon': ngay_chon,
+        'has_submitted': has_submitted,
+        'doanh_thu_data': [],
+        'ty_le_xe_data': [],
+        'loi_thuong_gap_data': [],
+        'tong_doanh_thu': 0,
+        'tieu_de_thong_ke': "",
+        'pagination': None
+    }
 
-    if has_submitted:
-        try:
-            if loai_thong_ke == 'doanh_thu':
-                if kieu_thong_ke == 'ngay':
-                    if ngay_chon:
-                        try:
-                            ngay = int(ngay_chon)
+    if not has_submitted:
+        return render_template('quanly/baocao.html', **context)
 
-                            from calendar import monthrange
-                            max_day = monthrange(nam_chon, thang_chon)[1]
+    try:
+        if loai_thong_ke == 'doanh_thu':
+            dao.xu_ly_thong_ke_doanh_thu(context, kieu_thong_ke, nam_chon, thang_chon, ngay_chon, page)
+        elif loai_thong_ke == 'loai_xe':
+            dao.xu_ly_thong_ke_loai_xe(context, nam_chon)
+        elif loai_thong_ke == 'loi_thuong_gap':
+            dao.xu_ly_thong_ke_loi(context, nam_chon)
+    except Exception as e:
+        flash(f"Lỗi khi thống kê: {str(e)}", "danger")
 
-                            if ngay < 1 or ngay > max_day:
-                                flash(f"Ngày không hợp lệ! Tháng {thang_chon}/{nam_chon} chỉ có {max_day} ngày.",
-                                      "danger")
-                                doanh_thu_data = []
-                                tong_doanh_thu = 0
-                            else:
-                                date_str = f"{ngay:02d}/{thang_chon:02d}/{nam_chon}"
-
-                                from dao import revenue_by_specific_date
-                                doanh_thu = revenue_by_specific_date(date_str)
-                                doanh_thu_data = [(ngay, doanh_thu)]
-                                tong_doanh_thu = doanh_thu
-                                tieu_de_thong_ke = f"Doanh thu ngày {ngay}/{thang_chon}/{nam_chon}"
-                        except ValueError:
-                            flash("Ngày không hợp lệ", "danger")
-                            doanh_thu_data = []
-                            tong_doanh_thu = 0
-                    else:
-                        pagination = dao.revenue_by_day_in_month_paginated(year=nam_chon, month=thang_chon, page=page,
-                                                                       per_page=7)
-                        doanh_thu_data = pagination.items
-
-                        all_data = dao.revenue_by_day_in_month(year=nam_chon, month=thang_chon)
-                        tong_doanh_thu = sum(row[1] for row in all_data)
-                        tieu_de_thong_ke = f"Doanh thu theo ngày của tháng {thang_chon} năm {nam_chon}"
-
-                elif kieu_thong_ke == 'thang':
-                    doanh_thu_data = dao.revenue_by_month(year=nam_chon)
-                    tieu_de_thong_ke = f"Doanh thu theo tháng năm {nam_chon}"
-                    tong_doanh_thu = sum(row[1] or 0 for row in doanh_thu_data)
-
-                elif kieu_thong_ke == 'quy':
-                    doanh_thu_data = dao.revenue_by_quarter(year=nam_chon)
-                    tieu_de_thong_ke = f"Doanh thu theo quý năm {nam_chon}"
-                    tong_doanh_thu = sum(row[1] or 0 for row in doanh_thu_data)
-
-            elif loai_thong_ke == 'loai_xe':
-                from dao import ty_le_loai_xe_by_year
-                raw_data = ty_le_loai_xe_by_year(year=nam_chon)
-                tong_xe = sum(row[1] for row in raw_data) if raw_data else 0
-
-                for loai_enum, so_luong in raw_data:
-                    ten_xe = loai_enum.value if loai_enum else "Không xác định"
-                    phan_tram = round(so_luong / tong_xe * 100, 1) if tong_xe > 0 else 0
-                    ty_le_xe_data.append({
-                        "ten_xe": ten_xe,
-                        "so_luong": so_luong,
-                        "phan_tram": phan_tram
-                    })
-                tieu_de_thong_ke = f"Tỷ lệ loại xe tiếp nhận năm {nam_chon}"
-
-            elif loai_thong_ke == 'loi_thuong_gap':
-                from dao import top_loi_thuong_gap_by_year
-                loi_thuong_gap_data = top_loi_thuong_gap_by_year(year=nam_chon, limit=10)
-                tieu_de_thong_ke = f"Các lỗi thường gặp trong năm {nam_chon}"
-
-        except Exception as e:
-            flash(f"Lỗi khi thống kê: {str(e)}", "danger")
-            doanh_thu_data = []
-            tong_doanh_thu = 0
-
-    return render_template(
-        'quanly/baocao.html',
-        kieu_thong_ke=kieu_thong_ke,
-        nam_chon=nam_chon,
-        thang_chon=thang_chon,
-        ngay_chon=ngay_chon,
-        pagination=pagination,
-        doanh_thu_data=doanh_thu_data,
-        tong_doanh_thu=tong_doanh_thu,
-        tieu_de_thong_ke=tieu_de_thong_ke,
-        loai_thong_ke=loai_thong_ke,
-        ty_le_xe_data=ty_le_xe_data,
-        loi_thuong_gap_data=loi_thuong_gap_data,
-        has_submitted=has_submitted
-    )
+    return render_template('quanly/baocao.html', **context)
 
 
 if __name__ == '__main__':

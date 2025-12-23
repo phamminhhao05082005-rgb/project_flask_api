@@ -9,7 +9,7 @@ from models import (
 from sqlalchemy.orm import joinedload
 from datetime import date, datetime
 from sqlalchemy import func, extract
-
+from calendar import monthrange
 
 
 def auth_user(username, password):
@@ -747,3 +747,79 @@ def revenue_by_day_in_month_paginated(year=None, month=None, page=1, per_page=7)
     end = start + per_page
     items = all_data[start:end]
     return SimplePagination(items, page, per_page, total)
+
+def xu_ly_thong_ke_doanh_thu(context, kieu_thong_ke, nam_chon, thang_chon, ngay_chon, page):
+    if kieu_thong_ke == 'ngay':
+        xu_ly_doanh_thu_theo_ngay(context, nam_chon, thang_chon, ngay_chon, page)
+    elif kieu_thong_ke == 'thang':
+        xu_ly_doanh_thu_theo_thang(context, nam_chon)
+    elif kieu_thong_ke == 'quy':
+        xu_ly_doanh_thu_theo_quy(context, nam_chon)
+
+
+def xu_ly_doanh_thu_theo_ngay(context, nam_chon, thang_chon, ngay_chon, page):
+    if ngay_chon:
+        try:
+            ngay = int(ngay_chon)
+            max_day = monthrange(nam_chon, thang_chon)[1]
+
+            if ngay < 1 or ngay > max_day:
+                flash(f"Ngày không hợp lệ! Tháng {thang_chon}/{nam_chon} chỉ có {max_day} ngày.", "danger")
+                return
+
+            date_str = f"{ngay:02d}/{thang_chon:02d}/{nam_chon}"
+            doanh_thu = revenue_by_specific_date(date_str)
+
+            context['doanh_thu_data'] = [(ngay, doanh_thu)]
+            context['tong_doanh_thu'] = doanh_thu
+            context['tieu_de_thong_ke'] = f"Doanh thu ngày {ngay}/{thang_chon}/{nam_chon}"
+        except ValueError:
+            flash("Ngày không hợp lệ", "danger")
+    else:
+        pagination = revenue_by_day_in_month_paginated(year=nam_chon, month=thang_chon, page=page, per_page=7)
+        all_data = revenue_by_day_in_month(year=nam_chon, month=thang_chon)
+
+        context['pagination'] = pagination
+        context['doanh_thu_data'] = pagination.items
+        context['tong_doanh_thu'] = sum(row[1] for row in all_data)
+        context['tieu_de_thong_ke'] = f"Doanh thu theo ngày của tháng {thang_chon} năm {nam_chon}"
+
+
+def xu_ly_doanh_thu_theo_thang(context, nam_chon):
+    doanh_thu_data = revenue_by_month(year=nam_chon)
+
+    context['doanh_thu_data'] = doanh_thu_data
+    context['tieu_de_thong_ke'] = f"Doanh thu theo tháng năm {nam_chon}"
+    context['tong_doanh_thu'] = sum(row[1] or 0 for row in doanh_thu_data)
+
+
+def xu_ly_doanh_thu_theo_quy(context, nam_chon):
+    doanh_thu_data = revenue_by_quarter(year=nam_chon)
+
+    context['doanh_thu_data'] = doanh_thu_data
+    context['tieu_de_thong_ke'] = f"Doanh thu theo quý năm {nam_chon}"
+    context['tong_doanh_thu'] = sum(row[1] or 0 for row in doanh_thu_data)
+
+
+def xu_ly_thong_ke_loai_xe(context, nam_chon):
+    raw_data = ty_le_loai_xe_by_year(year=nam_chon)
+    tong_xe = sum(row[1] for row in raw_data) if raw_data else 0
+
+    ty_le_xe_data = []
+    for loai_enum, so_luong in raw_data:
+        ten_xe = loai_enum.value if loai_enum else "Không xác định"
+        phan_tram = round(so_luong / tong_xe * 100, 1) if tong_xe > 0 else 0
+        ty_le_xe_data.append({
+            "ten_xe": ten_xe,
+            "so_luong": so_luong,
+            "phan_tram": phan_tram
+        })
+
+    context['ty_le_xe_data'] = ty_le_xe_data
+    context['tieu_de_thong_ke'] = f"Tỷ lệ loại xe tiếp nhận năm {nam_chon}"
+
+
+def xu_ly_thong_ke_loi(context, nam_chon):
+    loi_thuong_gap_data = top_loi_thuong_gap_by_year(year=nam_chon, limit=10)
+    context['loi_thuong_gap_data'] = loi_thuong_gap_data
+    context['tieu_de_thong_ke'] = f"Các lỗi thường gặp trong năm {nam_chon}"
