@@ -7,6 +7,7 @@ from flask_login import UserMixin
 from enum import Enum as UserEnum
 from datetime import date
 import hashlib
+import enum
 
 
 class RoleEnum(UserEnum):
@@ -30,8 +31,6 @@ class NhanVienBase(db.Model, UserMixin):
     def __str__(self):
         return f"{self.name} ({self.role.value})"
 
-import enum
-
 class TenQuyDinhEnum(enum.Enum):
     SL_XE_NHAN = "SL_XE_NHAN"
     THUE_VAT = "THUE_VAT"
@@ -46,13 +45,11 @@ class TenQuyDinhEnum(enum.Enum):
         }
         return labels[self.name]
 
-
 class QuyDinh(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     ten_quy_dinh = db.Column(db.Enum(TenQuyDinhEnum), nullable=False)
     noi_dung = Column(String(100), nullable=False)
     quanly_id = Column(Integer, ForeignKey(NhanVienBase.id), nullable=False)
-
 
 class HangMuc(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -138,7 +135,6 @@ class ChiTietSuaChua(db.Model):
     don_gia = Column(Float, nullable=False)
     linh_kien = relationship('LinhKien', backref='chi_tiet_sua_chuas', lazy=True)
 
-
 class PhieuThanhToan(db.Model):
     __tablename__ = 'phieu_thanh_toan'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -153,7 +149,6 @@ class PhieuThanhToan(db.Model):
         back_populates="phieu_thanh_toan"
     )
     thu_ngan = relationship("NhanVienBase", backref="cac_phieu_thanh_toan",lazy=True)
-
 
 if __name__ == "__main__":
     with app.app_context():

@@ -12,13 +12,13 @@ from models import (RoleEnum, PhieuTiepNhan, Loi, Xe, HangMuc, LoaiXe, ChiTietSu
 @app.route('/login')
 def index():
     return render_template('login.html')
-
-
 @login.user_loader
 def load_user(pk):
     return dao.get_user_by_id(pk)
-
-
+def check_role(*allowed_roles):
+    if current_user.role not in allowed_roles:
+        abort(403)
+    return None
 @app.route('/login', methods=['POST'])
 def login_process():
     username = request.form.get('username')
@@ -40,8 +40,6 @@ def login_process():
             return render_template('login.html')
     else:
         return render_template('login.html', error="Tên đăng nhập hoặc mật khẩu không đúng")
-
-
 @app.route('/logout')
 @login_required
 def logout():
@@ -71,8 +69,6 @@ def tiepnhan_dashboard():
         tong_so_ptn=tong_so_ptn,
         max_sl=max_sl
     )
-
-
 @app.route('/tiepnhan/taophieu', methods=['GET', 'POST'])
 @login_required
 def tiepnhan_taophieu():
@@ -113,8 +109,6 @@ def tiepnhan_taophieu():
     loai_xes = LoaiXe
 
     return render_template('NVTiepNhan/taophieu.html', lois=lois, loai_xes=loai_xes)
-
-
 @app.route('/tiepnhan/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def tiepnhan_edit(id):
@@ -154,8 +148,6 @@ def tiepnhan_edit(id):
         lois=lois,
         loai_xes=loai_xes
     )
-
-
 @app.route('/tiepnhan/delete/<int:id>', methods=['POST'])
 @login_required
 def tiepnhan_delete(id):
@@ -173,8 +165,6 @@ def tiepnhan_delete(id):
         flash("Xóa thất bại, phiếu không tồn tại!", "danger")
 
     return redirect(url_for('tiepnhan_dashboard'))
-
-
 @app.route('/request/kiem_tra_bien_so', methods=['POST'])
 @login_required
 def kiem_tra_bien_so():
@@ -224,8 +214,6 @@ def suachua_dashboard():
         kw=kw,
         ngay=ngay
     )
-
-
 @app.route('/suachua/nhan-phieu/<int:ptn_id>', methods=['POST'])
 @login_required
 def suachua_nhan_phieu(ptn_id):
@@ -236,8 +224,6 @@ def suachua_nhan_phieu(ptn_id):
     psc = dao.create_psc(ptn_id, current_user.id)
     flash("Da nhan phieu, them linh kien")
     return redirect(url_for('suachua_chi_tiet', psc_id=psc.id))
-
-
 @app.route('/suachua/chi-tiet/<int:psc_id>', methods=['GET', 'POST'])
 @login_required
 def suachua_chi_tiet(psc_id):
@@ -269,8 +255,6 @@ def suachua_chi_tiet(psc_id):
         psc=psc,
         all_linh_kien=all_linh_kien
     )
-
-
 @app.route('/suachua/delete/<int:psc_id>', methods=['POST'])
 @login_required
 def suachua_delete(psc_id):
@@ -281,8 +265,6 @@ def suachua_delete(psc_id):
     ok, message = dao.delete_psc(psc_id)
     flash(message, "success" if ok else "danger")
     return redirect(url_for('suachua_dashboard'))
-
-
 @app.route('/suachua/chi_tiet/<int:ctsc_id>', methods=['POST'])
 @login_required
 def suachua_delete_item(ctsc_id):
@@ -300,8 +282,6 @@ def suachua_delete_item(ctsc_id):
     ok, message = dao.delete_chitiet_psc(ctsc_id)
     flash(message, "success" if ok else "danger")
     return redirect(url_for('suachua_chi_tiet', psc_id=psc_id))
-
-
 @app.route('/suachua/xacnhan/<int:psc_id>', methods=['POST'])
 @login_required
 def suachua_xac_nhan(psc_id):
@@ -349,8 +329,6 @@ def thungan_dashboard():
         kw=kw,
         ngay=ngay
     )
-
-
 @app.route('/thungan/chi-tiet/<int:psc_id>')
 @login_required
 def thungan_chi_tiet(psc_id):
@@ -381,8 +359,6 @@ def thungan_chi_tiet(psc_id):
         vat_rate=vat_rate,
         da_thanh_toan=da_thanh_toan
     )
-
-
 @app.route('/thungan/xac-nhan-thanh-toan/<int:psc_id>', methods=['POST'])
 @login_required
 def thungan_xacnhan_thanh_toan(psc_id):
@@ -426,8 +402,6 @@ def quanly_dashboard():
     if check:
         return check
     return render_template('quanly/base_quanly.html')
-
-
 @app.route('/quanly/linhkien')
 @login_required
 def quanly_linhkien():
@@ -448,8 +422,6 @@ def quanly_linhkien():
         hangmucs=hangmucs,
         selected_hangmuc=hangmuc_id
     )
-
-
 @app.route('/quanly/linhkien/create-multi', methods=['GET', 'POST'])
 @login_required
 def quanly_linhkien_create_multi():
@@ -507,8 +479,6 @@ def quanly_linhkien_create_multi():
         return redirect(url_for('quanly_linhkien'))
 
     return render_template('quanly/tao_nhieu_lk.html', hangmucs=hangmucs)
-
-
 @app.route('/quanly/linhkien/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def quanly_linhkien_edit(id):
@@ -532,8 +502,6 @@ def quanly_linhkien_edit(id):
             return redirect(url_for('quanly_linhkien'))
 
     return render_template('quanly/tao_or_sua_lk.html', hangmucs=hangmucs, linhkien=lk)
-
-
 @app.route('/api/linhkien/delete/<int:id>', methods=['DELETE'])
 @login_required
 def api_delete_linhkien(id):
@@ -546,8 +514,6 @@ def api_delete_linhkien(id):
         return jsonify({"message": "Xóa linh kiện thành công"}), 200
     except Exception as e:
         return jsonify({"message": "Lỗi khi xóa linh kiện"}), 500
-
-
 @app.route('/quanly/linhkien/delete-multi', methods=['GET', 'POST'])
 @login_required
 def quanly_linhkien_delete_multi():
@@ -592,8 +558,6 @@ def quanly_quydinh():
     quydinhs = dao.get_quydinh_paginate(page=page, per_page=5, keyword=keyword)
 
     return render_template('quanly/quydinh.html', quydinhs=quydinhs, keyword=keyword)
-
-
 @app.route('/quanly/quydinh/create', methods=['GET', 'POST'])
 @login_required
 def quanly_quydinh_create():
@@ -625,8 +589,6 @@ def quanly_quydinh_create():
         quydinh=None,
         QuyDinhEnum=TenQuyDinhEnum
     )
-
-
 @app.route('/quanly/quydinh/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def quanly_quydinh_edit(id):
@@ -645,8 +607,6 @@ def quanly_quydinh_edit(id):
         return redirect(url_for('quanly_quydinh'))
 
     return render_template('quanly/tao_or_sua_qd.html', quydinh=qd, QuyDinhEnum=TenQuyDinhEnum)
-
-
 @app.route('/api/quydinh/delete/<int:id>', methods=['DELETE'])
 @login_required
 def api_quydinh_delete(id):
@@ -675,8 +635,6 @@ def quanly_hangmuc():
     hangmucs = dao.get_hangmuc_paginate(page=page, per_page=5, keyword=keyword)
 
     return render_template('quanly/hangmuc.html', hangmucs=hangmucs, keyword=keyword)
-
-
 @app.route('/quanly/hangmuc/create', methods=['GET', 'POST'])
 @login_required
 def quanly_hangmuc_create():
@@ -697,8 +655,6 @@ def quanly_hangmuc_create():
         return redirect(url_for('quanly_hangmuc'))
 
     return render_template('quanly/tao_or_sua_hm.html', hangmuc=None)
-
-
 @app.route('/quanly/hangmuc/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def quanly_hangmuc_edit(id):
@@ -719,8 +675,6 @@ def quanly_hangmuc_edit(id):
         return redirect(url_for('quanly_hangmuc'))
 
     return render_template('quanly/tao_or_sua_hm.html', hangmuc=hm)
-
-
 @app.route('/api/hangmuc/delete/<int:id>', methods=['DELETE'])
 @login_required
 def api_hangmuc_delete(id):
@@ -734,12 +688,6 @@ def api_hangmuc_delete(id):
         return jsonify({"message": message}), status
     except Exception as e:
         return jsonify({"message": "Lỗi khi xóa hạng mục"}), 500
-
-
-def check_role(*allowed_roles):
-    if current_user.role not in allowed_roles:
-        abort(403)
-    return None
 
 
 @app.route('/quanly/baocao', methods=['GET', 'POST'])
