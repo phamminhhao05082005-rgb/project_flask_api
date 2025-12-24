@@ -128,8 +128,9 @@ def tiepnhan_edit(id):
     if request.method == 'POST':
         new_loi_ids = request.form.getlist('loi_ids')
         description = request.form.get('description')
+        new_sdt = request.form.get('customer_sdt')
         try:
-            dao.update_phieu_tiep_nhan(id, new_loi_ids, description)
+            dao.update_phieu_tiep_nhan(id, new_loi_ids, description, new_sdt)
             if dao.is_phieu_sc_in_progress(id):
                 flash("Cập nhật thành công, quá trình sửa chữa đang được tiến hành. "
                       "Hãy thông báo cho nhân viên sửa chữa!", "warning")
@@ -146,7 +147,7 @@ def tiepnhan_edit(id):
         'NVTiepNhan/taophieu.html',
         ptn=ptn,
         lois=lois,
-        loai_xes=loai_xes
+        loai_xes=loai_xes,
     )
 @app.route('/tiepnhan/delete/<int:id>', methods=['POST'])
 @login_required

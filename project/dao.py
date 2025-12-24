@@ -229,7 +229,7 @@ def get_phieu_tiep_nhan_by_id(id):
         joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
         joinedload(PhieuTiepNhan.lois)
     ).get(id)
-def update_phieu_tiep_nhan(id, new_loi_ids, description=None):
+def update_phieu_tiep_nhan(id, new_loi_ids, description=None, new_sdt=None):
     ptn = get_phieu_tiep_nhan_by_id(id)
     if not ptn:
         return None
@@ -242,6 +242,16 @@ def update_phieu_tiep_nhan(id, new_loi_ids, description=None):
         loi = get_loi_by_id(loi_id)
         if loi:
             ptn.lois.append(loi)
+
+    if new_sdt and ptn.xe and ptn.xe.khachhang:
+        khach_hang = ptn.xe.khachhang
+        if khach_hang.sdt != new_sdt:
+            is_khachhangInDb = KhachHang.query.filter(KhachHang.sdt == new_sdt).first()
+            if is_khachhangInDb:
+                raise Exception(f"Số điện thoại {new_sdt} đã thuộc về khách hàng khác!")
+
+            khach_hang.sdt = new_sdt
+
     db.session.commit()
     return ptn
 def delete_phieu_tiep_nhan(id):
