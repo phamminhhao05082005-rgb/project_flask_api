@@ -342,15 +342,17 @@ def thungan_chi_tiet(psc_id):
         return redirect(url_for('thungan_dashboard'))
 
     quy_dinh_vat = QuyDinh.query.filter_by(ten_quy_dinh=TenQuyDinhEnum.THUE_VAT).first()
-    vat_rate = float(quy_dinh_vat.noi_dung) if quy_dinh_vat else 0.001
+    if quy_dinh_vat:
+        vat_rate = float(quy_dinh_vat.noi_dung)
+    else:
+        vat_rate = 10
 
-    tong_that = (
-        psc.phieu_thanh_toan.tong_tien
-        if psc.phieu_thanh_toan
-        else dao.tinh_tong_tien_phieu_sua_chua(psc_id)
-    )
-
-    da_thanh_toan = psc.phieu_thanh_toan.da_thanh_toan if psc.phieu_thanh_toan else False
+    if psc.phieu_thanh_toan:
+        tong_that = psc.phieu_thanh_toan.tong_tien
+        da_thanh_toan = psc.phieu_thanh_toan.da_thanh_toan
+    else:
+        tong_that = dao.tinh_tong_tien_phieu_sua_chua(psc_id)
+        da_thanh_toan = False
 
     return render_template(
         'NVThuNgan/chi_tiet_thanh_toan.html',
