@@ -3,8 +3,6 @@ from flask_login import login_user, logout_user, login_required, current_user
 from init import app, login, db
 from project import dao
 from datetime import datetime, date
-
-from sqlalchemy import func
 from models import (RoleEnum, PhieuTiepNhan, Loi, Xe, HangMuc, LoaiXe, ChiTietSuaChua,
                     PhieuSuaChua, TenQuyDinhEnum, QuyDinh, PhieuThanhToan, Ptn_loi)
 
@@ -315,7 +313,7 @@ def thungan_dashboard():
     phieu_thanh_toan_pagination = dao.get_phieu_thanh_toan(page=page, per_page=4, kw=kw, ngay=ngay)
 
     for psc in phieu_thanh_toan_pagination.items:
-        pt = PhieuThanhToan.query.filter_by(phieu_sua_chua_id=psc.id).first()
+        pt = PhieuThanhToan.query.filter(PhieuThanhToan.phieu_sua_chua_id == psc.id).first()
         if pt:
             psc.da_thanh_toan = pt.da_thanh_toan
             psc.tong_tien = pt.tong_tien
@@ -341,7 +339,7 @@ def thungan_chi_tiet(psc_id):
         flash("Phiếu không tồn tại hoặc chưa được xác nhận sửa xong!", "danger")
         return redirect(url_for('thungan_dashboard'))
 
-    quy_dinh_vat = QuyDinh.query.filter_by(ten_quy_dinh=TenQuyDinhEnum.THUE_VAT).first()
+    quy_dinh_vat = QuyDinh.query.filter(QuyDinh.ten_quy_dinh == TenQuyDinhEnum.THUE_VAT).first()
     if quy_dinh_vat:
         vat_rate = float(quy_dinh_vat.noi_dung)
     else:
@@ -373,23 +371,21 @@ def thungan_xacnhan_thanh_toan(psc_id):
         flash("Không tìm thấy phiếu sửa chữa!", "danger")
         return redirect(url_for('thungan_dashboard'))
 
-    from models import PhieuThanhToan
 
     tong = dao.tinh_tong_tien_phieu_sua_chua(psc_id)
 
-    pt = PhieuThanhToan.query.filter_by(phieu_sua_chua_id=psc.id).first()
+    pt = PhieuThanhToan.query.filter(PhieuThanhToan.phieu_sua_chua_id == psc.id).first()
     if not pt:
         pt = PhieuThanhToan(
             phieu_sua_chua_id=psc.id,
             tong_tien=tong,
             thu_ngan_id=current_user.id,
-            da_thanh_toan=True
+            da_thanh_toan=True,
+            ngay_thanh_toan=date.today()
         )
         db.session.add(pt)
     else:
-        pt.da_thanh_toan = True
-        pt.thu_ngan_id = current_user.id
-        pt.ngay_thanh_toan = date.today()
+        raise Exception("Phiếu này đã được thanh toán rồi!")
 
     db.session.commit()
 

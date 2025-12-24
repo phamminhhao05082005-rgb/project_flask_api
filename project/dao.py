@@ -406,7 +406,7 @@ def tinh_tong_tien_phieu_sua_chua(psc_id):
     if not psc:
         return 0.0
 
-    vat_rule = QuyDinh.query.filter_by(ten_quy_dinh=TenQuyDinhEnum.THUE_VAT).first()
+    vat_rule = QuyDinh.query.filter(QuyDinh.ten_quy_dinh == TenQuyDinhEnum.THUE_VAT).first()
     vat_percent = float(vat_rule.noi_dung) if vat_rule else 10.0
 
     vat = vat_percent / 100.0
