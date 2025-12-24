@@ -296,7 +296,7 @@ def suachua_xac_nhan(psc_id):
         flash("Phiếu sửa chữa không tồn tại.", "danger")
         return redirect(url_for('suachua_dashboard'))
 
-    flash(f"Phiếu #{psc.id} đã được xác nhận.", "success")
+    flash(f"Phiếu {psc.id} đã được xác nhận.", "success")
     return redirect(url_for('suachua_dashboard'))
 
 
