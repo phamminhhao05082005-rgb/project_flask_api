@@ -78,13 +78,13 @@ def tiepnhan_taophieu():
 
         max_sl = dao.get_quy_dinh_sl_xe_nhan()
         if max_sl is None:
-            flash("Không tìm thấy quy định về số lượng xe nhận!", "danger")
+            flash("Khong tim thay quy dinh!", "danger")
             return redirect(url_for('tiepnhan_taophieu'))
 
         sl_hom_nay = dao.count_phieu_tiep_nhan_today()
 
         if sl_hom_nay >= max_sl:
-            flash(f"Hôm nay đã nhận đủ {max_sl} xe theo quy định! Không thể nhận thêm.", "warning")
+            flash(f"Đã nhaanj đủ {max_sl} xe theo quy định! Không thể nhận thêm.", "warning")
             return redirect(url_for('tiepnhan_dashboard'))
 
         data = {
@@ -130,8 +130,8 @@ def tiepnhan_edit(id):
         try:
             dao.update_phieu_tiep_nhan(id, new_loi_ids, description, new_sdt)
             if dao.is_phieu_sc_in_progress(id):
-                flash("Cập nhật thành công, quá trình sửa chữa đang được tiến hành. "
-                      "Hãy thông báo cho nhân viên sửa chữa!", "warning")
+                flash("Cập nhật thành công, đang tiến hành sửa. "
+                      "Hãy thông báo cho nhân viên sửa!", "warning")
             else:
                 flash("Cập nhật phiếu thành công!", "success")
             return redirect(url_for('tiepnhan_dashboard'))
@@ -155,7 +155,7 @@ def tiepnhan_delete(id):
         return check
 
     if dao.check_start_sc(id):
-        flash("Không thể xoá! Việc sửa chữa đang được tiến hành.", "danger")
+        flash("Không được xoá! Việc sửa chữa đang được tiến hành.", "danger")
         return redirect(url_for('tiepnhan_dashboard'))
 
     if dao.delete_phieu_tiep_nhan(id):

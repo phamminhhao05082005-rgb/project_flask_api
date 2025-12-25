@@ -103,7 +103,7 @@ class PhieuTiepNhan(db.Model):
     xe_id = Column(Integer, ForeignKey(Xe.id), nullable=False)
     ngay_tiep_nhan = Column(Date, nullable=False, default=date.today)
     description = db.Column(db.String(255))
-    phieu_sua_chuas = relationship('PhieuSuaChua', backref='phieu_tiep_nhan', lazy=True, cascade='all, delete-orphan')
+    phieu_sua_chua = relationship('PhieuSuaChua', backref='phieu_tiep_nhan', lazy=True, cascade='all, delete-orphan')
     lois = relationship('Loi', secondary=Ptn_loi.__table__,
                         backref='phieu_tiep_nhans', lazy=True)
     nhan_vien_tiep_nhan = relationship('NhanVienBase',

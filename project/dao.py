@@ -177,7 +177,7 @@ def get_loi_paginate(page=1, per_page=5):
 def get_xe_by_bien_so(bien_so):
     return Xe.query.options(joinedload(Xe.khachhang)).filter_by(bien_so=bien_so).first()
 def get_all_phieu_tiep_nhan(page=1, per_page=5, kw=None, ngay=None):
-    query = PhieuTiepNhan.query
+    query = PhieuTiepNhan.query.filter(~PhieuTiepNhan.phieu_sua_chua.any(PhieuSuaChua.da_xac_nhan == True))
 
     if kw:
         query = query.join(Xe).filter(Xe.bien_so.contains(kw))
@@ -190,13 +190,12 @@ def get_all_phieu_tiep_nhan(page=1, per_page=5, kw=None, ngay=None):
         joinedload(PhieuTiepNhan.lois)
     ).order_by(PhieuTiepNhan.ngay_tiep_nhan.desc()).paginate(page=page, per_page=per_page)
 def create_phieu_tiep_nhan(data, nvtn_id):
-    with db.session.begin_nested():
+    try:
         kh = KhachHang.query.filter_by(sdt=data['customer_sdt']).first()
         if not kh:
             kh = KhachHang(name=data['customer_name'], sdt=data['customer_sdt'])
             db.session.add(kh)
             db.session.flush()
-
 
         xe = get_xe_by_bien_so(data['xe_bien_so'])
         if not xe:
@@ -208,7 +207,6 @@ def create_phieu_tiep_nhan(data, nvtn_id):
             db.session.add(xe)
             db.session.flush()
 
-
         ptn = PhieuTiepNhan(
             nvtn_id=nvtn_id,
             xe_id=xe.id,
@@ -217,7 +215,6 @@ def create_phieu_tiep_nhan(data, nvtn_id):
         db.session.add(ptn)
         db.session.flush()
 
-
         for loi_id in data['loi_ids']:
             ptn_loi = Ptn_loi(
                 ptn_id=ptn.id,
@@ -225,7 +222,13 @@ def create_phieu_tiep_nhan(data, nvtn_id):
             )
             db.session.add(ptn_loi)
 
-    db.session.commit()
+        db.session.commit()
+        return "Tạo phiếu thành công!"
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Lỗi: {str(e)}")
+        return f"Lỗi: {str(e)}"
 def get_phieu_tiep_nhan_by_id(id):
     return PhieuTiepNhan.query.options(
         joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
