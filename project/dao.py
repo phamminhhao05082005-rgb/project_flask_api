@@ -12,6 +12,7 @@ from sqlalchemy import func, extract
 from calendar import monthrange
 
 
+
 def auth_user(username, password):
     password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
     return NhanVienBase.query.filter(NhanVienBase.username == username.strip(),
@@ -439,49 +440,17 @@ def get_phieu_thanh_toan(page=1, per_page=10, kw=None, ngay=None):
 
     return query.paginate(page=page, per_page=per_page, error_out=False)
 
-def lay_gia_tri_quy_dinh(ten_quy_dinh):
-    qd = QuyDinh.query.filter(QuyDinh.ten_quy_dinh == ten_quy_dinh).first()
-    if qd and qd.noi_dung:
-        try:
-            return float(qd.noi_dung)
-        except:
-            return 0.1
-    return 0.1
-
-def tao_phieu_thanh_toan(phieu_sua_chua_id, tong_tien, thu_ngan_id):
-    pt = PhieuThanhToan(
-        phieu_sua_chua_id=phieu_sua_chua_id,
-        tong_tien=tong_tien,
-        thu_ngan_id=thu_ngan_id
-    )
-    db.session.add(pt)
-    db.session.commit()
-    return pt
-
-
-def revenue_by_specific_date(date_str):
-    try:
-        date_obj = datetime.strptime(date_str, '%d/%m/%Y')
-    except ValueError:
-        return 0
-
+def revenue_by_specific_date(date_obj):
     result = (
         db.session.query(
             func.sum(PhieuThanhToan.tong_tien).label('total')
         )
-        .filter(func.date(PhieuThanhToan.ngay_thanh_toan) == date_obj.date())
+        .filter(func.date(PhieuThanhToan.ngay_thanh_toan) == date_obj)
         .scalar()
     )
-
     return result or 0
+
 def revenue_by_day_in_month(year=None, month=None):
-    from calendar import monthrange
-
-    if year is None:
-        year = datetime.now().year
-    if month is None:
-        month = datetime.now().month
-
     actual_data = (
         db.session.query(
             func.extract('day', PhieuThanhToan.ngay_thanh_toan).label('day'),
@@ -504,10 +473,8 @@ def revenue_by_day_in_month(year=None, month=None):
         result.append((day, total))
 
     return result
-def revenue_by_month(year=None):
-    if year is None:
-        year = datetime.now().year
 
+def revenue_by_month(year=None):
     actual_data = (
         db.session.query(
             func.extract('month', PhieuThanhToan.ngay_thanh_toan).label('month'),
@@ -526,10 +493,8 @@ def revenue_by_month(year=None):
         result.append((month, total))
 
     return result
-def revenue_by_quarter(year=None):
-    if year is None:
-        year = datetime.now().year
 
+def revenue_by_quarter(year=None):
     actual_data = (
         db.session.query(
             func.extract('quarter', PhieuThanhToan.ngay_thanh_toan).label('quarter'),
@@ -548,10 +513,8 @@ def revenue_by_quarter(year=None):
         result.append((quarter, total))
 
     return result
-def ty_le_loai_xe_by_year(year=None):
-    if year is None:
-        year = datetime.now().year
 
+def ty_le_loai_xe_by_year(year=None):
     return (
         db.session.query(
             Xe.loai_xe,
@@ -563,17 +526,14 @@ def ty_le_loai_xe_by_year(year=None):
                 .order_by(func.count(PhieuTiepNhan.id).desc())
                 .all()
             )
-def top_loi_thuong_gap_by_year(year=None, limit=10):
-    if year is None:
-        year = datetime.now().year
 
+def top_loi_thuong_gap_by_year(year=None, limit=10):
     return (
         db.session.query(
             Loi.ten_loi,
             func.count(Ptn_loi.loi_id).label('so_lan')
         )
         .join(Ptn_loi, Loi.id == Ptn_loi.loi_id)
-
         .join(PhieuTiepNhan, Ptn_loi.ptn_id == PhieuTiepNhan.id)
         .filter(extract('year', PhieuTiepNhan.ngay_tiep_nhan) == year)
         .group_by(Loi.id, Loi.ten_loi)
@@ -581,15 +541,8 @@ def top_loi_thuong_gap_by_year(year=None, limit=10):
         .limit(limit)
         .all()
     )
+
 def revenue_by_day_in_month_paginated(year=None, month=None, page=1, per_page=7):
-
-    from calendar import monthrange
-
-    if year is None:
-        year = datetime.now().year
-    if month is None:
-        month = datetime.now().month
-
     actual_data = (
         db.session.query(
             func.extract('day', PhieuThanhToan.ngay_thanh_toan).label('day'),
@@ -639,9 +592,7 @@ def revenue_by_day_in_month_paginated(year=None, month=None, page=1, per_page=7)
         def iter_pages(self, left_edge=2, left_current=2, right_current=3, right_edge=2):
             last = 0
             for num in range(1, self.pages + 1):
-                if num <= left_edge or \
-                        (num > self.page - left_current - 1 and num < self.page + right_current) or \
-                        num > self.pages - right_edge:
+                if num <= left_edge or (num > self.page - left_current - 1 and num < self.page + right_current) or num > self.pages - right_edge:
                     if last + 1 != num:
                         yield None
                     yield num
@@ -672,8 +623,8 @@ def xu_ly_doanh_thu_theo_ngay(context, nam_chon, thang_chon, ngay_chon, page):
                 flash(f"Ngày không hợp lệ! Tháng {thang_chon}/{nam_chon} chỉ có {max_day} ngày.", "danger")
                 return
 
-            date_str = f"{ngay:02d}/{thang_chon:02d}/{nam_chon}"
-            doanh_thu = revenue_by_specific_date(date_str)
+            date_obj = date(nam_chon, thang_chon, ngay)
+            doanh_thu = revenue_by_specific_date(date_obj)
 
             context['doanh_thu_data'] = [(ngay, doanh_thu)]
             context['tong_doanh_thu'] = doanh_thu
@@ -707,12 +658,16 @@ def xu_ly_doanh_thu_theo_quy(context, nam_chon):
 
 
 def xu_ly_thong_ke_loai_xe(context, nam_chon):
-    raw_data = ty_le_loai_xe_by_year(year=nam_chon)
-    tong_xe = sum(row[1] for row in raw_data) if raw_data else 0
+    du_lieu_loai_xe = ty_le_loai_xe_by_year(year=nam_chon)
+
+    if du_lieu_loai_xe:
+        tong_xe = sum(row[1] for row in du_lieu_loai_xe)
+    else:
+        tong_xe = 0
 
     ty_le_xe_data = []
-    for loai_enum, so_luong in raw_data:
-        ten_xe = loai_enum.value if loai_enum else "Không xác định"
+    for loai_enum, so_luong in du_lieu_loai_xe:
+        ten_xe = loai_enum.value if loai_enum else "Không xác định được loại xe"
         phan_tram = round(so_luong / tong_xe * 100, 1) if tong_xe > 0 else 0
         ty_le_xe_data.append({
             "ten_xe": ten_xe,
