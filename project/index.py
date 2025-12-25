@@ -688,7 +688,7 @@ def api_hangmuc_delete(id):
         return jsonify({"message": "Lỗi khi xóa hạng mục"}), 500
 
 
-@app.route('/quanly/baocao', methods=['GET', 'POST'])
+@app.route('/quanly/baocao', methods=['GET'])
 @login_required
 def quanly_baocao():
     check = check_role(RoleEnum.QUANLY)
