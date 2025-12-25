@@ -125,11 +125,13 @@ def create_hangmuc(ten, quanly_id, mo_ta=None):
     )
     db.session.add(hm)
     db.session.commit()
-def update_hangmuc(id, ten):
+def update_hangmuc(id, ten, mo_ta=None):
     hm = get_hangmuc_by_id(id)
     if hm:
         hm.ten_hang_muc = ten
+        hm.mo_ta = mo_ta
         db.session.commit()
+
 def delete_hangmuc(id):
     hm = get_hangmuc_by_id(id)
     if hm:

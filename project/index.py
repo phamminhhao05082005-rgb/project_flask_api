@@ -663,18 +663,29 @@ def quanly_hangmuc_edit(id):
         return check
 
     hm = dao.get_hangmuc_by_id(id)
+
     if request.method == 'POST':
         ten_moi = request.form['ten'].strip()
+        mo_ta_moi = request.form.get('mo_ta', '').strip()
 
-        if not dao.is_name_unique(HangMuc, ten_moi, exclude_id=id, field_name='ten_hang_muc'):
+        if not dao.is_name_unique(
+            HangMuc,
+            ten_moi,
+            exclude_id=id,
+            field_name='ten_hang_muc'
+        ):
             flash("Tên hạng mục đã tồn tại!", "danger")
-            return render_template('quanly/tao_or_sua_hm.html', hangmuc=hm)
+            return render_template(
+                'quanly/tao_or_sua_hm.html',
+                hangmuc=hm
+            )
 
-        dao.update_hangmuc(id, ten_moi)
+        dao.update_hangmuc(id, ten_moi, mo_ta_moi)
         flash("Cập nhật hạng mục thành công", "success")
         return redirect(url_for('quanly_hangmuc'))
 
     return render_template('quanly/tao_or_sua_hm.html', hangmuc=hm)
+
 @app.route('/api/hangmuc/delete/<int:id>', methods=['DELETE'])
 @login_required
 def api_hangmuc_delete(id):
