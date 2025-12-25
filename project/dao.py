@@ -75,8 +75,6 @@ def delete_linhkien(id):
     return True
 def get_all_linh_kien():
     return LinhKien.query.all()
-# def get_all_hangmuc():
-#     return HangMuc.query.all()
 
 from models import QuyDinh
 def get_quydinh_paginate(page=1, per_page=5):
@@ -103,9 +101,6 @@ def delete_quydinh(id):
     db.session.delete(qd)
     db.session.commit()
     return True
-#
-# def get_all_linh_kien():
-#     return LinhKien.query.all()
 def get_quydinh_paginate(page=1, per_page=5, keyword=None):
     query = QuyDinh.query
     if keyword:
@@ -236,7 +231,7 @@ def get_phieu_tiep_nhan_by_id(id):
         joinedload(PhieuTiepNhan.xe).joinedload(Xe.khachhang),
         joinedload(PhieuTiepNhan.lois)
     ).get(id)
-def update_phieu_tiep_nhan(id, new_loi_ids, description=None):
+def update_phieu_tiep_nhan(id, new_loi_ids, description=None, new_sdt=None):
     ptn = get_phieu_tiep_nhan_by_id(id)
     if not ptn:
         return None
@@ -249,6 +244,16 @@ def update_phieu_tiep_nhan(id, new_loi_ids, description=None):
         loi = get_loi_by_id(loi_id)
         if loi:
             ptn.lois.append(loi)
+
+    if new_sdt and ptn.xe and ptn.xe.khachhang:
+        khach_hang = ptn.xe.khachhang
+        if khach_hang.sdt != new_sdt:
+            is_khachhangInDb = KhachHang.query.filter(KhachHang.sdt == new_sdt).first()
+            if is_khachhangInDb:
+                raise Exception(f"Số điện thoại {new_sdt} đã thuộc về khách hàng khác!")
+
+            khach_hang.sdt = new_sdt
+
     db.session.commit()
     return ptn
 def delete_phieu_tiep_nhan(id):
@@ -397,13 +402,14 @@ def xac_nhan(psc_id):
 
 def get_kh_by_sdt(sdt):
     return KhachHang.query.filter_by(sdt=sdt).first()
+
 def tinh_tong_tien_phieu_sua_chua(psc_id):
     psc = PhieuSuaChua.query.get(psc_id)
     if not psc:
         return 0.0
 
-    vat_rule = QuyDinh.query.filter_by(ten_quy_dinh=TenQuyDinhEnum.THUE_VAT).first()
-    vat_percent = float(vat_rule.noi_dung) if vat_rule else 0.0
+    vat_rule = QuyDinh.query.filter(QuyDinh.ten_quy_dinh == TenQuyDinhEnum.THUE_VAT).first()
+    vat_percent = float(vat_rule.noi_dung) if vat_rule else 10.0
 
     vat = vat_percent / 100.0
 
@@ -418,27 +424,27 @@ def tinh_tong_tien_phieu_sua_chua(psc_id):
     tong_sau_thue = tong_truoc_thue * (1 + vat)
 
     return round(tong_sau_thue)
+
 def get_phieu_thanh_toan(page=1, per_page=10, kw=None, ngay=None):
-    query = PhieuSuaChua.query.filter_by(da_xac_nhan=True) \
-        .order_by(PhieuSuaChua.ngay_sua_chua.desc())
+    query = PhieuSuaChua.query.filter(PhieuSuaChua.da_xac_nhan == True).order_by(PhieuSuaChua.ngay_sua_chua.desc())
 
     if kw:
-        query = query.join(PhieuTiepNhan, PhieuSuaChua.ptn_id == PhieuTiepNhan.id) \
-            .join(Xe, PhieuTiepNhan.xe_id == Xe.id) \
-            .filter(Xe.bien_so.ilike(f"%{kw}%"))
+        query = query.join(PhieuTiepNhan, PhieuSuaChua.ptn_id == PhieuTiepNhan.id).join(Xe, PhieuTiepNhan.xe_id == Xe.id).filter(Xe.bien_so.ilike(f"%{kw}%"))
 
     if ngay:
         query = query.filter(PhieuSuaChua.ngay_sua_chua == ngay)
 
     return query.paginate(page=page, per_page=per_page, error_out=False)
+
 def lay_gia_tri_quy_dinh(ten_quy_dinh):
-    qd = QuyDinh.query.filter_by(ten_quy_dinh=ten_quy_dinh).first()
+    qd = QuyDinh.query.filter(QuyDinh.ten_quy_dinh == ten_quy_dinh).first()
     if qd and qd.noi_dung:
         try:
             return float(qd.noi_dung)
         except:
             return 0.1
     return 0.1
+
 def tao_phieu_thanh_toan(phieu_sua_chua_id, tong_tien, thu_ngan_id):
     pt = PhieuThanhToan(
         phieu_sua_chua_id=phieu_sua_chua_id,

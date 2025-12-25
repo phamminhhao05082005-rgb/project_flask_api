@@ -61,10 +61,9 @@
                 <input type="tel" class="form-control" id="customer_sdt" name="customer_sdt"
                        pattern="[0-9]{1,10}" inputmode="numeric" maxlength="10"
                        value="{{ ptn.xe.khachhang.sdt if ptn else '' }}"
-                       {{ 'disabled' if ptn else 'required' }}>
+                       {{ ptn.xe.khachhang.sdt if ptn else 'required' }}>
             </div>
         </fieldset>
-
 
         <fieldset class="border p-3 mb-3">
             <legend class="w-auto px-2">3. Thông tin lỗi & mô tả</legend>

@@ -42,7 +42,7 @@
                     <tr>
                         <th>Tên linh kiện</th>
                         <th>Số lượng</th>
-                        <th>Đơn giá linh kiện</th>
+                        <th>Đơn giá 1 linh kiện</th>
                         <th>Tiền công</th>
                         <th>Thành tiền</th>
                     </tr>
@@ -52,7 +52,7 @@
                     <tr>
                         <td>{{ ct.linh_kien.ten_linh_kien }}</td>
                         <td>{{ ct.so_luong }}</td>
-                        <td>{{ "{:,.0f}".format(ct.don_gia * ct.so_luong) }}</td>
+                        <td>{{ "{:,.0f}".format(ct.don_gia) }}</td>
                         <td>{{ "{:,.0f}".format(ct.linh_kien.tien_cong * ct.so_luong) }}</td>
                         <td>{{ "{:,.0f}".format((ct.don_gia + ct.linh_kien.tien_cong) * ct.so_luong) }}</td>
                     </tr>
@@ -76,7 +76,7 @@
                     </h4>
 
                     <div class="text-center mt-4">
-                        {% if not psc.phieu_thanh_toan or not psc.phieu_thanh_toan.da_thanh_toan %}
+                        {% if not psc.phieu_thanh_toan %}
                         <form action="{{ url_for('thungan_xacnhan_thanh_toan', psc_id=psc.id) }}" method="POST">
                             <button type="submit" class="btn btn-success btn-lg px-5"
                                     onclick="return confirm('Bạn có chắc chắn muốn xác nhận thanh toán không?')">
@@ -133,7 +133,7 @@
                         <th class="text-center">STT</th>
                         <th class="text-center">Hạng mục</th>
                         <th class="text-center">Số lượng</th>
-                        <th class="text-center">Đơn giá</th>
+                        <th class="text-center">Đơn giá 1 linh kiện</th>
                         <th class="text-center">Tiền công</th>
                         <th class="text-center">Thành tiền</th>
                     </tr>
@@ -144,7 +144,7 @@
                         <td class="text-center">{{ loop.index }}</td>
                         <td class="text-center">{{ ct.linh_kien.ten_linh_kien }}</td>
                         <td class="text-center">{{ ct.so_luong }}</td>
-                        <td class="text-center">{{ "{:,.0f}".format(ct.don_gia * ct.so_luong) }} đ</td>
+                        <td class="text-center">{{ "{:,.0f}".format(ct.don_gia) }} đ</td>
                         <td class="text-center">{{ "{:,.0f}".format(ct.linh_kien.tien_cong * ct.so_luong) }} đ</td>
                         <td class="text-center">{{ "{:,.0f}".format((ct.don_gia + ct.linh_kien.tien_cong) *
                             ct.so_luong) }} đ
